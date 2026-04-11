@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { ordersAPI } from '../api/index';
 import { PageLoader } from '../components/LoadingSpinner';
 import OrderStatusBadge from '../components/OrderStatusBadge';
-import { FiPackage, FiUser, FiMail, FiPhone, FiEdit2, FiCheck, FiX } from 'react-icons/fi';
+import { FiPackage, FiEdit2, FiCheck, FiX } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { authAPI } from '../api/auth';
 

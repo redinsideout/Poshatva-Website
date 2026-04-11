@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiArrowRight, FiShield, FiTruck, FiStar } from 'react-icons/fi';
-import { GiPlantRoots, GiEarthWorm, GiSolidLeaf } from 'react-icons/gi';
+import { GiSolidLeaf } from 'react-icons/gi';
 import ProductCard from '../components/ProductCard';
 import { PageLoader } from '../components/LoadingSpinner';
-import { productsAPI, categoriesAPI } from '../api/index';
+import { productsAPI } from '../api/index';
 
 const CATEGORIES = [
   { name: 'Cocopeat',    slug: 'cocopeat',     icon: '🥥', desc: 'Perfect growing medium',    color: 'from-amber-50 to-amber-100 border-amber-200',   textColor: 'text-amber-800' },

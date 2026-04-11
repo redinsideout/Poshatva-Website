@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FiGrid, FiPackage, FiShoppingBag, FiUsers, FiLogOut, FiMenu, FiX } from 'react-icons/fi';
-import { GiSolidLeaf } from 'react-icons/gi';
+import { FiGrid, FiPackage, FiShoppingBag, FiUsers, FiLogOut, FiMenu } from 'react-icons/fi';
+
 
 const AdminLayout = ({ children }) => {
   const { user, logout } = useAuth();

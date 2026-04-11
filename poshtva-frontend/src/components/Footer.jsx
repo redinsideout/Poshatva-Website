@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { GiSolidLeaf } from 'react-icons/gi';
+
 import { FiMail, FiPhone, FiMapPin, FiInstagram, FiFacebook, FiTwitter } from 'react-icons/fi';
 
 const Footer = () => {
@@ -21,9 +21,9 @@ const Footer = () => {
             </p>
             <div className="flex gap-3">
               {[FiInstagram, FiFacebook, FiTwitter].map((Icon, i) => (
-                <a key={i} href="#" className="w-9 h-9 bg-forest-700 hover:bg-forest-500 rounded-lg flex items-center justify-center transition-colors">
+                <button type="button" key={i} className="w-9 h-9 bg-forest-700 hover:bg-forest-500 rounded-lg flex items-center justify-center transition-colors">
                   <Icon className="text-sm" />
-                </a>
+                </button>
               ))}
             </div>
           </div>
@@ -66,9 +66,9 @@ const Footer = () => {
         <div className="page-container py-5 flex flex-col md:flex-row items-center justify-between gap-3 text-sm text-forest-300">
           <p>© {new Date().getFullYear()} Poshatva. All rights reserved.</p>
           <div className="flex gap-4">
-            <a href="#" className="hover:text-leaf transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-leaf transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-leaf transition-colors">Refund Policy</a>
+            <button type="button" className="hover:text-leaf transition-colors">Privacy Policy</button>
+            <button type="button" className="hover:text-leaf transition-colors">Terms of Service</button>
+            <button type="button" className="hover:text-leaf transition-colors">Refund Policy</button>
           </div>
         </div>
       </div>

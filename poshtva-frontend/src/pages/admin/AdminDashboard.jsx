@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import { adminAPI } from '../../api/index';
 import { PageLoader } from '../../components/LoadingSpinner';
-import { FiTrendingUp, FiPackage, FiUsers, FiDollarSign, FiShoppingBag } from 'react-icons/fi';
+import { FiPackage, FiUsers, FiDollarSign, FiShoppingBag } from 'react-icons/fi';
 import OrderStatusBadge from '../../components/OrderStatusBadge';
 import { Link } from 'react-router-dom';
 
@@ -33,7 +33,7 @@ const AdminDashboard = () => {
 
   if (loading) return <AdminLayout><PageLoader /></AdminLayout>;
 
-  const { stats, recentOrders = [], salesByMonth = [], ordersByStatus = [] } = data || {};
+  const { stats, recentOrders = [], ordersByStatus = [] } = data || {};
 
   return (
     <AdminLayout>

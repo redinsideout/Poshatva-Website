@@ -24,7 +24,7 @@ const AdminProductForm = () => {
   const [loading, setLoading]   = useState(isEdit);
   const [saving, setSaving]     = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [imgFiles, setImgFiles]   = useState([]);
+
 
   useEffect(() => {
     document.title = `${isEdit ? 'Edit' : 'Add'} Product — Admin`;

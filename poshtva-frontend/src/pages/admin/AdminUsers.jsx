@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import AdminLayout from '../../components/AdminLayout';
 import { adminAPI } from '../../api/index';
 import { PageLoader } from '../../components/LoadingSpinner';
-import { FiUsers, FiMail, FiCalendar } from 'react-icons/fi';
+
 
 const AdminUsers = () => {
   const [users, setUsers]     = useState([]);
