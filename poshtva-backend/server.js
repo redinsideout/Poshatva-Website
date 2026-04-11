@@ -15,7 +15,7 @@ const app = express();
 // Security
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(cors({
-  origin: [process.env.CLIENT_URL || 'http://localhost:3000'],
+  origin: [process.env.CLIENT_URL || 'http://localhost:3000', 'https://poshatva-website.vercel.app'],
   credentials: true,
 }));
 

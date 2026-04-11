@@ -1,3 +1,4 @@
+require('dns').setServers(['8.8.8.8']);
 require('dotenv').config();
 const mongoose = require('mongoose');
 const connectDB = require('../config/db');
