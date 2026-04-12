@@ -54,11 +54,9 @@ function App() {
             <Route path="/"          element={<MainLayout><Home /></MainLayout>}          />
             <Route path="/products"  element={<MainLayout><Products /></MainLayout>}      />
             <Route path="/products/:slug" element={<MainLayout><ProductDetail /></MainLayout>} />
+            <Route path="/cart"      element={<MainLayout><Cart /></MainLayout>}    />
             <Route path="/login"     element={<Login />}      />
             <Route path="/register"  element={<Register />}   />
-
-            {/* Protected User Routes */}
-            <Route path="/cart" element={<ProtectedRoute><MainLayout><Cart /></MainLayout></ProtectedRoute>} />
             <Route path="/checkout" element={<ProtectedRoute><MainLayout><Checkout /></MainLayout></ProtectedRoute>} />
             <Route path="/order-success" element={<ProtectedRoute><MainLayout><OrderSuccess /></MainLayout></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><MainLayout><Profile /></MainLayout></ProtectedRoute>} />

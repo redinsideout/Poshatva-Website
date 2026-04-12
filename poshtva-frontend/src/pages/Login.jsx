@@ -88,11 +88,6 @@ const Login = () => {
             </p>
           </div>
 
-          {/* Demo credentials */}
-          <div className="mt-6 p-4 bg-forest-50 rounded-xl text-xs text-forest-700 border border-forest-100">
-            <p className="font-semibold mb-1">🔑 Demo Admin:</p>
-            <p>Email: admin@poshatva.com | Password: Admin@1234</p>
-          </div>
         </motion.div>
       </div>
     </div>

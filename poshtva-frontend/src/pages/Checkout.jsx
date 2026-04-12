@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -17,6 +17,24 @@ const Checkout = () => {
   });
 
   const { subtotal = 0, tax = 0, shipping = 0, total = 0 } = state || {};
+
+  useEffect(() => {
+    if (form.pincode && form.pincode.length === 6) {
+      const fetchLocation = async () => {
+        try {
+          const res = await fetch(`https://api.postalpincode.in/pincode/${form.pincode}`);
+          const data = await res.json();
+          if (data && data[0].Status === 'Success') {
+            const { District, State } = data[0].PostOffice[0];
+            setForm(prev => ({ ...prev, city: District, state: State }));
+          }
+        } catch (err) {
+          console.error('Pincode fetch error:', err);
+        }
+      };
+      fetchLocation();
+    }
+  }, [form.pincode]);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
