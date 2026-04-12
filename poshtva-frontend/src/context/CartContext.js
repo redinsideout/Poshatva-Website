@@ -5,13 +5,27 @@ import toast from 'react-hot-toast';
 
 const CartContext = createContext(null);
 
+const GUEST_CART_KEY = 'poshatva_guest_cart';
+
+const getGuestCart = () => {
+  try { return JSON.parse(localStorage.getItem(GUEST_CART_KEY)) || { items: [], totalAmount: 0 }; }
+  catch { return { items: [], totalAmount: 0 }; }
+};
+
+const saveGuestCart = (cart) => localStorage.setItem(GUEST_CART_KEY, JSON.stringify(cart));
+
+const calcGuestTotal = (items) => items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+
 export const CartProvider = ({ children }) => {
   const { user } = useAuth();
-  const [cart, setCart]         = useState({ items: [], totalAmount: 0 });
+  const [cart, setCart]             = useState({ items: [], totalAmount: 0 });
   const [cartLoading, setCartLoading] = useState(false);
 
   const fetchCart = useCallback(async () => {
-    if (!user) { setCart({ items: [], totalAmount: 0 }); return; }
+    if (!user) {
+      setCart(getGuestCart());
+      return;
+    }
     try {
       setCartLoading(true);
       const data = await cartAPI.getCart();
@@ -25,8 +39,45 @@ export const CartProvider = ({ children }) => {
 
   useEffect(() => { fetchCart(); }, [fetchCart]);
 
-  const addToCart = async (productId, quantity = 1) => {
-    if (!user) { toast.error('Please login to add items to cart'); return false; }
+  // When user logs in, merge guest cart into server cart
+  useEffect(() => {
+    if (!user) return;
+    const guest = getGuestCart();
+    if (!guest.items.length) return;
+    (async () => {
+      for (const item of guest.items) {
+        try { await cartAPI.addToCart({ productId: item.product._id || item.product, quantity: item.quantity }); }
+        catch { /* skip if already there */ }
+      }
+      localStorage.removeItem(GUEST_CART_KEY);
+      fetchCart();
+    })();
+  }, [user]); // eslint-disable-line
+
+  const addToCart = async (productId, quantity = 1, productData = null) => {
+    if (!user) {
+      // Guest mode — store in localStorage
+      const guest = getGuestCart();
+      const existing = guest.items.findIndex((i) => (i.product._id || i.product) === productId);
+      let updatedItems;
+      if (existing >= 0) {
+        updatedItems = guest.items.map((item, idx) =>
+          idx === existing ? { ...item, quantity: item.quantity + quantity } : item
+        );
+      } else {
+        const newItem = {
+          product: productData ? productData : { _id: productId },
+          quantity,
+          price: productData?.discountPrice > 0 ? productData.discountPrice : productData?.price || 0,
+        };
+        updatedItems = [...guest.items, newItem];
+      }
+      const updated = { items: updatedItems, totalAmount: calcGuestTotal(updatedItems) };
+      saveGuestCart(updated);
+      setCart(updated);
+      toast.success('Added to cart! 🌿');
+      return true;
+    }
     try {
       const data = await cartAPI.addToCart({ productId, quantity });
       setCart(data.cart);
@@ -39,6 +90,15 @@ export const CartProvider = ({ children }) => {
   };
 
   const removeFromCart = async (productId) => {
+    if (!user) {
+      const guest = getGuestCart();
+      const updatedItems = guest.items.filter((i) => (i.product._id || i.product) !== productId);
+      const updated = { items: updatedItems, totalAmount: calcGuestTotal(updatedItems) };
+      saveGuestCart(updated);
+      setCart(updated);
+      toast.success('Item removed');
+      return;
+    }
     try {
       const data = await cartAPI.removeFromCart(productId);
       setCart(data.cart);
@@ -50,6 +110,16 @@ export const CartProvider = ({ children }) => {
 
   const updateQuantity = async (productId, quantity) => {
     if (quantity < 1) { removeFromCart(productId); return; }
+    if (!user) {
+      const guest = getGuestCart();
+      const updatedItems = guest.items.map((i) =>
+        (i.product._id || i.product) === productId ? { ...i, quantity } : i
+      );
+      const updated = { items: updatedItems, totalAmount: calcGuestTotal(updatedItems) };
+      saveGuestCart(updated);
+      setCart(updated);
+      return;
+    }
     try {
       const data = await cartAPI.addToCart({ productId, quantity });
       setCart(data.cart);
@@ -59,6 +129,11 @@ export const CartProvider = ({ children }) => {
   };
 
   const clearCart = async () => {
+    if (!user) {
+      localStorage.removeItem(GUEST_CART_KEY);
+      setCart({ items: [], totalAmount: 0 });
+      return;
+    }
     try {
       await cartAPI.clearCart();
       setCart({ items: [], totalAmount: 0 });

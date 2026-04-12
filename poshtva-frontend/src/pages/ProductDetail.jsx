@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { FiShoppingCart, FiStar, FiPlus, FiMinus, FiCheck, FiPackage, FiTruck } from 'react-icons/fi';
+import { FiShoppingCart, FiStar, FiPlus, FiMinus, FiCheck, FiPackage, FiTruck, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
 import { PageLoader } from '../components/LoadingSpinner';
 import { productsAPI } from '../api/products';
 import { getImageUrl } from '../utils/imageHelper';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const ProductDetail = () => {
   const { slug }                        = useParams();
@@ -62,19 +63,58 @@ const ProductDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 bg-white rounded-3xl p-6 md:p-10 shadow-card">
           {/* Images */}
           <div>
-            <div className="aspect-square bg-forest-50 rounded-2xl overflow-hidden mb-4">
-              {images?.[selectedImg] ? (
-                <img src={getImageUrl(images[selectedImg])} alt={name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-8xl">🌿</div>
+            {/* Main Image with arrows */}
+            <div className="relative aspect-square bg-forest-50 rounded-2xl overflow-hidden mb-4 group">
+              <AnimatePresence mode="wait">
+                <motion.div key={selectedImg}
+                  initial={{ opacity: 0, x: 40 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -40 }}
+                  transition={{ duration: 0.25 }}
+                  className="w-full h-full"
+                >
+                  {images?.[selectedImg] ? (
+                    <img src={getImageUrl(images[selectedImg])} alt={name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-8xl">🌿</div>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Prev / Next arrows — only when multiple images */}
+              {images?.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setSelectedImg((prev) => (prev - 1 + images.length) % images.length)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/80 hover:bg-white shadow-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
+                    <FiChevronLeft className="text-lg text-gray-700" />
+                  </button>
+                  <button
+                    onClick={() => setSelectedImg((prev) => (prev + 1) % images.length)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/80 hover:bg-white shadow-md rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 z-10">
+                    <FiChevronRight className="text-lg text-gray-700" />
+                  </button>
+
+                  {/* Dot indicators */}
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                    {images.map((_, i) => (
+                      <button key={i} onClick={() => setSelectedImg(i)}
+                        className={`rounded-full transition-all duration-200 ${selectedImg === i ? 'w-5 h-2 bg-forest-600' : 'w-2 h-2 bg-white/60'}`} />
+                    ))}
+                  </div>
+                </>
               )}
             </div>
+
+            {/* Thumbnail strip */}
             {images?.length > 1 && (
-              <div className="flex gap-3">
+              <div className="flex gap-2 overflow-x-auto pb-1">
                 {images.map((img, i) => (
                   <button key={i} onClick={() => setSelectedImg(i)}
-                    className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${selectedImg === i ? 'border-forest-500' : 'border-transparent'}`}>
-                    <img src={getImageUrl(img)} alt="" className="w-full h-full object-cover" />
+                    className={`flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${
+                      selectedImg === i ? 'border-forest-500 scale-105' : 'border-gray-200 hover:border-forest-300'
+                    }`}>
+                    <img src={getImageUrl(img)} alt={`View ${i + 1}`} className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>

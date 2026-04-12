@@ -73,7 +73,7 @@ const ProductCard = ({ product }) => {
 
           {/* Add to Cart */}
           <button
-            onClick={() => addToCart(product._id, 1)}
+            onClick={() => addToCart(product._id, 1, product)}
             disabled={stock === 0}
             className="w-full btn-primary text-sm py-2.5 disabled:opacity-50 disabled:cursor-not-allowed">
             <FiShoppingCart />
