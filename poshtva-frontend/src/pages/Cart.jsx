@@ -4,7 +4,7 @@ import { FiTrash2, FiPlus, FiMinus, FiShoppingBag, FiArrowRight } from 'react-ic
 import { useCart } from '../context/CartContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const API_URL = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000';
+import { getImageUrl } from '../utils/imageHelper';
 const TAX_RATE = 0.05;
 const FREE_SHIPPING_THRESHOLD = 499;
 const SHIPPING_COST = 49;
@@ -46,7 +46,7 @@ const Cart = () => {
               {items.map((item) => {
                 const p = item.product;
                 if (!p) return null;
-                const imgSrc = p.images?.[0] ? `${API_URL}${p.images[0]}` : null;
+                const imgSrc = getImageUrl(p.images?.[0]);
                 return (
                   <motion.div key={item._id || p._id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
                     className="card p-5 flex gap-4">

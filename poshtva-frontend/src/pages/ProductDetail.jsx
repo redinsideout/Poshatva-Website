@@ -4,8 +4,7 @@ import { FiShoppingCart, FiStar, FiPlus, FiMinus, FiCheck, FiPackage, FiTruck } 
 import { useCart } from '../context/CartContext';
 import { PageLoader } from '../components/LoadingSpinner';
 import { productsAPI } from '../api/products';
-
-const API_URL = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000';
+import { getImageUrl } from '../utils/imageHelper';
 
 const ProductDetail = () => {
   const { slug }                        = useParams();
@@ -65,7 +64,7 @@ const ProductDetail = () => {
           <div>
             <div className="aspect-square bg-forest-50 rounded-2xl overflow-hidden mb-4">
               {images?.[selectedImg] ? (
-                <img src={`${API_URL}${images[selectedImg]}`} alt={name} className="w-full h-full object-cover" />
+                <img src={getImageUrl(images[selectedImg])} alt={name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-8xl">🌿</div>
               )}
@@ -75,7 +74,7 @@ const ProductDetail = () => {
                 {images.map((img, i) => (
                   <button key={i} onClick={() => setSelectedImg(i)}
                     className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${selectedImg === i ? 'border-forest-500' : 'border-transparent'}`}>
-                    <img src={`${API_URL}${img}`} alt="" className="w-full h-full object-cover" />
+                    <img src={getImageUrl(img)} alt="" className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>

@@ -7,7 +7,7 @@ import OrderStatusBadge from '../../components/OrderStatusBadge';
 import toast from 'react-hot-toast';
 import { FiArrowLeft, FiSave, FiMapPin } from 'react-icons/fi';
 
-const API_URL = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000';
+import { getImageUrl } from '../../utils/imageHelper';
 const STATUS_OPTIONS = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
 
 const AdminOrderDetail = () => {
@@ -57,7 +57,7 @@ const AdminOrderDetail = () => {
             <h3 className="font-semibold text-gray-800 mb-4">Order Items</h3>
             <div className="space-y-4">
               {order.orderItems?.map((item, i) => {
-                const imgSrc = item.image ? `${API_URL}${item.image}` : null;
+                const imgSrc = getImageUrl(item.image);
                 return (
                   <div key={i} className="flex gap-4 pb-4 border-b border-gray-100 last:border-0">
                     <div className="w-14 h-14 bg-forest-50 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">

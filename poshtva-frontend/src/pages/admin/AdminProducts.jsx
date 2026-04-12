@@ -6,7 +6,7 @@ import { PageLoader } from '../../components/LoadingSpinner';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
-const API_URL = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000';
+import { getImageUrl } from '../../utils/imageHelper';
 
 const AdminProducts = () => {
   const [products, setProducts]   = useState([]);
@@ -69,7 +69,7 @@ const AdminProducts = () => {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filtered.map((p) => {
-                  const imgSrc = p.images?.[0] ? `${API_URL}${p.images[0]}` : null;
+                  const imgSrc = getImageUrl(p.images?.[0]);
                   const effPrice = p.discountPrice > 0 ? p.discountPrice : p.price;
                   return (
                     <tr key={p._id} className="hover:bg-gray-50 transition-colors">

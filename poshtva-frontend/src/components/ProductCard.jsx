@@ -4,14 +4,14 @@ import { useCart } from '../context/CartContext';
 import { FiShoppingCart, FiStar, FiZap } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 
-const API_URL = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000';
+import { getImageUrl } from '../utils/imageHelper';
 
 const ProductCard = ({ product }) => {
   const { addToCart } = useCart();
   const { name, slug, images, price, discountPrice, rating, numReviews, stock, isFeatured } = product;
   const effectivePrice = discountPrice > 0 ? discountPrice : price;
   const discount = discountPrice > 0 ? Math.round(((price - discountPrice) / price) * 100) : 0;
-  const imgSrc = images?.[0] ? `${API_URL}${images[0]}` : null;
+  const imgSrc = getImageUrl(images?.[0]);
 
   return (
     <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}
