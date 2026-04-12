@@ -164,18 +164,23 @@ const seedData = async () => {
   await Product.insertMany(products);
 
   // Create admin user
-  const adminExists = await User.findOne({ email: 'admin@Poshatva.com' });
-  if (!adminExists) {
-    await User.create({
-      name: 'Poshatva Admin',
-      email: 'admin@Poshatva.com',
-      password: 'Admin@1234',
-      role: 'admin',
-    });
-  }
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@Poshatva.com';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@1234';
+
+  // Clear existing admins to ensure only the personal one exists
+  await User.deleteMany({ role: 'admin' });
+  console.log('🗑️ Existing admin accounts cleared.');
+
+  await User.create({
+    name: 'Poshatva Admin',
+    email: adminEmail,
+    password: adminPassword,
+    role: 'admin',
+  });
+  console.log(`✅ Personal admin user created: ${adminEmail}`);
 
   console.log('✅ Seed data inserted successfully!');
-  console.log('📧 Admin: admin@Poshatva.com | 🔑 Password: Admin@1234');
+  console.log(`📧 Admin: ${adminEmail} | 🔑 Password: [HIDDEN]`);
   process.exit(0);
 };
 
