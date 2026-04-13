@@ -64,4 +64,16 @@ const updateProfile = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { register, login, getMe, updateProfile };
+// @desc  Add shipping address
+const addAddress = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    res.status(404);
+    throw new Error('User not found');
+  }
+  user.addresses.push(req.body);
+  const updated = await user.save();
+  res.json({ success: true, user: updated });
+});
+
+module.exports = { register, login, getMe, updateProfile, addAddress };

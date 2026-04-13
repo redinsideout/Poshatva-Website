@@ -29,7 +29,7 @@ const ProductDetail = () => {
   }, [slug]);
 
   const handleAddToCart = async () => {
-    const ok = await addToCart(product._id, qty);
+    const ok = await addToCart(product._id, qty, product);
     if (ok) { setAddedToCart(true); setTimeout(() => setAddedToCart(false), 2000); }
   };
 

@@ -4,4 +4,5 @@ export const authAPI = {
   login:    (data)       => api.post('/auth/login', data),
   getMe:    ()           => api.get('/auth/me'),
   update:   (data)       => api.put('/auth/profile', data),
+  addAddress:(data)      => api.post('/auth/address', data),
 };
