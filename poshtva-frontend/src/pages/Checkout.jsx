@@ -43,7 +43,8 @@ const Checkout = () => {
   }, [selectedAddressId, user?.addresses, user?.name]);
 
   useEffect(() => {
-    if (form.pincode && form.pincode.length === 6 && selectedAddressId === 'new') {
+    const isNewAddressMode = !selectedAddressId || selectedAddressId === 'new';
+    if (form.pincode && form.pincode.length === 6 && isNewAddressMode) {
       const fetchLocation = async () => {
         setPincodeLoading(true);
         try {
@@ -51,7 +52,11 @@ const Checkout = () => {
           const data = await res.json();
           if (data && data[0].Status === 'Success') {
             const { District, State } = data[0].PostOffice[0];
-            setForm(prev => ({ ...prev, city: District, state: State }));
+            setForm(prev => ({ 
+              ...prev, 
+              city: District || '', 
+              state: State || '' 
+            }));
           }
         } catch (err) {
           console.error('Pincode fetch error:', err);
