@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { FiShoppingCart, FiUser, FiMenu, FiX, FiChevronDown, FiLogOut, FiPackage, FiSettings, FiSearch, FiShoppingBag } from 'react-icons/fi';
+import { FiUser, FiMenu, FiX, FiLogOut, FiPackage, FiSettings, FiSearch, FiShoppingBag } from 'react-icons/fi';
 import { FaWhatsapp } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import { categoriesAPI } from '../api';
@@ -33,7 +33,7 @@ const Navbar = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm border-b border-gray-100">
+    <header className={`fixed top-0 left-0 right-0 z-50 bg-white transition-all duration-300 ${scrolled ? 'shadow-md border-b-0' : 'shadow-sm border-b border-gray-100'}`}>
       
       {/* Top Row: Logo, Search, Basic Actions */}
       <div className="bg-white">

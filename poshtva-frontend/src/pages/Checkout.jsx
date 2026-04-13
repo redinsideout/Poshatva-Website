@@ -88,6 +88,7 @@ const Checkout = () => {
       };
       fetchLocation();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.pincode, selectedAddressId]);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
