@@ -3,7 +3,6 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { FiShoppingCart, FiUser, FiMenu, FiX, FiChevronDown, FiLogOut, FiPackage, FiSettings } from 'react-icons/fi';
-
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Navbar = () => {

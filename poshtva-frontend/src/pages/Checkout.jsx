@@ -40,7 +40,7 @@ const Checkout = () => {
     } else if (selectedAddressId === 'new') {
       setForm({ fullName: user?.name || '', phone: '', street: '', city: '', state: '', pincode: '' });
     }
-  }, [selectedAddressId, user?.addresses]);
+  }, [selectedAddressId, user?.addresses, user?.name]);
 
   useEffect(() => {
     if (form.pincode && form.pincode.length === 6 && selectedAddressId === 'new') {
