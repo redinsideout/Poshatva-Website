@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-import { FiMail, FiPhone, FiMapPin, FiInstagram, FiFacebook, FiTwitter } from 'react-icons/fi';
+import { FiMail, FiPhone, FiMapPin, FiInstagram, FiFacebook } from 'react-icons/fi';
 
 const Footer = () => {
   return (
@@ -20,10 +20,13 @@ const Footer = () => {
               Bringing nature's finest organic plant-care products to your doorstep. Grow better, live greener.
             </p>
             <div className="flex gap-3">
-              {[FiInstagram, FiFacebook, FiTwitter].map((Icon, i) => (
-                <button type="button" key={i} className="w-9 h-9 bg-forest-700 hover:bg-forest-500 rounded-lg flex items-center justify-center transition-colors">
+              {[
+                { Icon: FiInstagram, url: 'https://www.instagram.com/poshatva/' },
+                { Icon: FiFacebook, url: 'https://www.facebook.com/profile.php?id=61552269023487' }
+              ].map(({ Icon, url }, i) => (
+                <a href={url} target="_blank" rel="noopener noreferrer" key={i} className="w-9 h-9 bg-forest-700 hover:bg-forest-500 rounded-lg flex items-center justify-center transition-colors">
                   <Icon className="text-sm" />
-                </button>
+                </a>
               ))}
             </div>
           </div>
@@ -54,9 +57,9 @@ const Footer = () => {
           <div>
             <h4 className="font-display font-semibold text-white mb-4">Contact Us</h4>
             <ul className="space-y-3 text-sm text-forest-200">
-              <li className="flex items-start gap-3"><FiMail className="mt-0.5 flex-shrink-0 text-leaf" /><span>hello@poshatva.com</span></li>
-              <li className="flex items-start gap-3"><FiPhone className="mt-0.5 flex-shrink-0 text-leaf" /><span>+91 98765 43210</span></li>
-              <li className="flex items-start gap-3"><FiMapPin className="mt-0.5 flex-shrink-0 text-leaf" /><span>Bengaluru, Karnataka, India 560001</span></li>
+              <li className="flex items-start gap-3"><FiMail className="mt-0.5 flex-shrink-0 text-leaf" /><span>[EMAIL_ADDRESS]</span></li>
+              <li className="flex items-start gap-3"><FiPhone className="mt-0.5 flex-shrink-0 text-leaf" /><span>+91 8445684783</span></li>
+              <li className="flex items-start gap-3"><FiMapPin className="mt-0.5 flex-shrink-0 text-leaf" /><span>Muzaffarnagar, Uttar Pradesh, India 251001</span></li>
             </ul>
           </div>
         </div>
