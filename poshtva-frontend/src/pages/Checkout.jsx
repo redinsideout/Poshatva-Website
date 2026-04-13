@@ -143,6 +143,17 @@ const Checkout = () => {
     }
   };
 
+  const handleMapAddressDetect = (address) => {
+    setForm(prev => ({
+      ...prev,
+      street: address.street || prev.street,
+      city: address.city || prev.city,
+      state: address.state || prev.state,
+      pincode: address.pincode || prev.pincode
+    }));
+    toast.success('Address auto-filled from map!');
+  };
+
   return (
     <div className="pt-20 min-h-screen bg-gray-50">
       <div className="page-container py-10">
@@ -212,7 +223,7 @@ const Checkout = () => {
                   <FiMapPin className="text-forest-500" /> Precise Location
                 </h3>
                 <p className="text-sm text-gray-500 mb-4 italic">Tap the map to pin your exact house/building for faster delivery</p>
-                <MapPicker onLocationSelect={setCoords} />
+                <MapPicker onLocationSelect={setCoords} onAddressDetect={handleMapAddressDetect} />
               </div>
 
               {/* Payment Method */}

@@ -8,13 +8,14 @@ const containerStyle = {
   height: '100%'
 };
 
-const MapPicker = ({ onLocationSelect, initialPosition }) => {
+const MapPicker = ({ onLocationSelect, onAddressDetect, initialPosition }) => {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY
   });
 
   const mapRef = useRef(null);
+  const geocoderRef = useRef(null);
   const [markerPosition, setMarkerPosition] = useState(
     initialPosition ? { lat: initialPosition[0], lng: initialPosition[1] } : null
   );
@@ -23,16 +24,44 @@ const MapPicker = ({ onLocationSelect, initialPosition }) => {
     ? { lat: initialPosition[0], lng: initialPosition[1] } 
     : { lat: 29.4727, lng: 77.7085 }; // Muzaffarnagar
 
+  const reverseGeocode = useCallback((lat, lng) => {
+    if (!geocoderRef.current) geocoderRef.current = new window.google.maps.Geocoder();
+
+    geocoderRef.current.geocode({ location: { lat, lng } }, (results, status) => {
+      if (status === 'OK' && results[0]) {
+        const components = results[0].address_components;
+        const address = {
+          street: results[0].formatted_address.split(',').slice(0, 2).join(', '),
+          city: '',
+          state: '',
+          pincode: ''
+        };
+
+        components.forEach(c => {
+          if (c.types.includes('locality')) address.city = c.long_name;
+          if (c.types.includes('administrative_area_level_1')) address.state = c.long_name;
+          if (c.types.includes('postal_code')) address.pincode = c.long_name;
+          // Fallback for city if locality is missing
+          if (!address.city && c.types.includes('administrative_area_level_2')) address.city = c.long_name;
+        });
+
+        if (onAddressDetect) onAddressDetect(address);
+      }
+    });
+  }, [onAddressDetect]);
+
   const onMapClick = useCallback((e) => {
     const lat = e.latLng.lat();
     const lng = e.latLng.lng();
     const newPos = { lat, lng };
     setMarkerPosition(newPos);
     onLocationSelect(newPos);
-  }, [onLocationSelect]);
+    reverseGeocode(lat, lng);
+  }, [onLocationSelect, reverseGeocode]);
 
   const onLoad = useCallback((map) => {
     mapRef.current = map;
+    geocoderRef.current = new window.google.maps.Geocoder();
   }, []);
 
   const handleLocateMe = () => {
@@ -47,6 +76,7 @@ const MapPicker = ({ onLocationSelect, initialPosition }) => {
         const newPos = { lat: latitude, lng: longitude };
         setMarkerPosition(newPos);
         onLocationSelect(newPos);
+        reverseGeocode(latitude, longitude);
         if (mapRef.current) {
           mapRef.current.panTo(newPos);
           mapRef.current.setZoom(16);
