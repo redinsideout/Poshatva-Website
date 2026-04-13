@@ -21,7 +21,14 @@ const register = asyncHandler(async (req, res) => {
   res.status(201).json({
     success: true,
     token: generateToken(user._id),
-    user: { _id: user._id, name: user.name, email: user.email, role: user.role },
+    user: { 
+      _id: user._id, 
+      name: user.name, 
+      email: user.email, 
+      role: user.role, 
+      phone: user.phone, 
+      addresses: user.addresses 
+    },
   });
 });
 
@@ -33,7 +40,14 @@ const login = asyncHandler(async (req, res) => {
     res.json({
       success: true,
       token: generateToken(user._id),
-      user: { _id: user._id, name: user.name, email: user.email, role: user.role },
+      user: { 
+        _id: user._id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role, 
+        phone: user.phone, 
+        addresses: user.addresses 
+      },
     });
   } else {
     res.status(401);
@@ -60,7 +74,14 @@ const updateProfile = asyncHandler(async (req, res) => {
   const updated = await user.save();
   res.json({
     success: true,
-    user: { _id: updated._id, name: updated.name, email: updated.email, role: updated.role, phone: updated.phone },
+    user: { 
+      _id: updated._id, 
+      name: updated.name, 
+      email: updated.email, 
+      role: updated.role, 
+      phone: updated.phone, 
+      addresses: updated.addresses 
+    },
   });
 });
 
