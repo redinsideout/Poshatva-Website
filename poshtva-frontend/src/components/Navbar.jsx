@@ -16,13 +16,28 @@ const Navbar = () => {
   const [scrolled, setScrolled]       = useState(false);
   const [categories, setCategories]   = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isVisible, setIsVisible]     = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Determine visibility
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsVisible(false); // Scrolling down - hide
+      } else {
+        setIsVisible(true);  // Scrolling up - show
+      }
+      
+      setScrolled(currentScrollY > 20);
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
     categoriesAPI.getAll().then(res => setCategories(res.categories || [])).catch(console.error);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [lastScrollY]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -33,7 +48,12 @@ const Navbar = () => {
   };
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 bg-white transition-all duration-300 ${scrolled ? 'shadow-md border-b-0' : 'shadow-sm border-b border-gray-100'}`}>
+    <motion.header 
+      initial={{ y: 0 }}
+      animate={{ y: isVisible ? 0 : -130 }}
+      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      className={`fixed top-0 left-0 right-0 z-50 bg-white transition-shadow duration-300 ${scrolled ? 'shadow-md' : 'shadow-sm border-b border-gray-100'}`}
+    >
       
       {/* Top Row: Logo, Search, Basic Actions */}
       <div className="bg-white">
@@ -60,7 +80,7 @@ const Navbar = () => {
 
             {/* Right Actions */}
             <div className="flex items-center gap-1 md:gap-4">
-              <a href="https://wa.me/91XXXXXXXXXX" target="_blank" rel="noreferrer" 
+              <a href="https://wa.me/918445684783" target="_blank" rel="noreferrer" 
                  className="p-2 text-forest-500 hover:bg-forest-50 rounded-full transition-all text-xl" title="WhatsApp Support">
                 <FaWhatsapp />
               </a>
@@ -132,7 +152,7 @@ const Navbar = () => {
                 {cat.name}
               </Link>
             ))}
-            <Link to="/profile" className="hover:text-forest-600 transition-colors">Offers</Link>
+            <Link to="/products?featured=true" className="hover:text-forest-600 transition-colors py-2 border-b-2 border-transparent hover:border-forest-500 whitespace-nowrap">Offers</Link>
           </nav>
         </div>
       </div>
@@ -181,7 +201,7 @@ const Navbar = () => {
           </>
         )}
       </AnimatePresence>
-    </header>
+    </motion.header>
   );
 };
 
