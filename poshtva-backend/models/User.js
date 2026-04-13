@@ -17,6 +17,7 @@ const userSchema = new mongoose.Schema(
         city: String,
         state: String,
         pincode: String,
+        label: { type: String, enum: ['Home', 'Work', 'Other'], default: 'Other' },
         isDefault: { type: Boolean, default: false },
       },
     ],

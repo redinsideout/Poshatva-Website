@@ -4,7 +4,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { ordersAPI, paymentAPI, authAPI } from '../api/index';
 import toast from 'react-hot-toast';
-import { FiMapPin, FiCreditCard, FiLock, FiCheck, FiPlus } from 'react-icons/fi';
+import { FiMapPin, FiCreditCard, FiLock, FiCheck, FiPlus, FiHome, FiBriefcase } from 'react-icons/fi';
 import { getImageUrl } from '../utils/imageHelper';
 
 const Checkout = () => {
@@ -16,7 +16,7 @@ const Checkout = () => {
   const [saveAddress, setSaveAddress] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState('');
   const [form, setForm]       = useState({
-    fullName: user?.name || '', phone: '', street: '', city: '', state: '', pincode: ''
+    fullName: user?.name || '', phone: '', street: '', city: '', state: '', pincode: '', label: 'Home'
   });
 
   const { subtotal = 0, tax = 0, shipping = 0, total = 0 } = state || {};
@@ -32,11 +32,12 @@ const Checkout = () => {
           street: addr.street,
           city: addr.city,
           state: addr.state,
-          pincode: addr.pincode
+          pincode: addr.pincode,
+          label: addr.label || 'Other'
         });
       }
     } else if (selectedAddressId === 'new') {
-      setForm({ fullName: user?.name || '', phone: '', street: '', city: '', state: '', pincode: '' });
+      setForm({ fullName: user?.name || '', phone: '', street: '', city: '', state: '', pincode: '', label: 'Home' });
     }
   }, [selectedAddressId, user?.addresses, user?.name]);
 
@@ -141,6 +142,14 @@ const Checkout = () => {
     }
   };
 
+  const getLabelIcon = (label) => {
+    switch (label) {
+      case 'Home': return <FiHome />;
+      case 'Work': return <FiBriefcase />;
+      default: return <FiMapPin />;
+    }
+  };
+
   return (
     <div className="pt-20 min-h-screen bg-gray-50">
       <div className="page-container py-10">
@@ -160,14 +169,27 @@ const Checkout = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                     {user.addresses.map((addr) => (
                       <div key={addr._id} onClick={() => setSelectedAddressId(addr._id)}
-                        className={`p-4 rounded-2xl border-2 transition-all cursor-pointer hover:bg-forest-50 ${selectedAddressId === addr._id ? 'border-forest-500 bg-forest-50' : 'border-gray-100 bg-white'}`}>
-                        <p className="font-bold text-gray-800 mb-1">{addr.fullName}</p>
-                        <p className="text-xs text-gray-500 leading-relaxed">{addr.street}, {addr.city}, {addr.state} - {addr.pincode}</p>
+                        className={`p-4 rounded-2xl border-2 transition-all cursor-pointer group relative overflow-hidden ${selectedAddressId === addr._id ? 'border-forest-500 bg-forest-50 shadow-md' : 'border-gray-100 bg-white hover:border-forest-200'}`}>
+                        <div className="flex items-start justify-between mb-2">
+                          <div className={`p-2 rounded-lg ${selectedAddressId === addr._id ? 'bg-forest-500 text-white' : 'bg-gray-50 text-gray-400 group-hover:bg-forest-100 group-hover:text-forest-600'}`}>
+                            {getLabelIcon(addr.label)}
+                          </div>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${selectedAddressId === addr._id ? 'bg-forest-200 text-forest-800' : 'bg-gray-100 text-gray-500'}`}>
+                            {addr.label || 'Other'}
+                          </span>
+                        </div>
+                        <p className="font-bold text-gray-800 mb-0.5 truncate">{addr.fullName}</p>
+                        <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{addr.street}, {addr.city}</p>
+                        {selectedAddressId === addr._id && (
+                          <div className="absolute bottom-1 right-2">
+                            <FiCheck className="text-forest-600" />
+                          </div>
+                        )}
                       </div>
                     ))}
                     <div onClick={() => setSelectedAddressId('new')}
-                      className={`p-4 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all cursor-pointer hover:bg-gray-100 ${selectedAddressId === 'new' ? 'border-forest-500 bg-forest-50 text-forest-600' : 'border-gray-200 text-gray-400'}`}>
-                      <FiPlus />
+                      className={`p-4 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-1 transition-all cursor-pointer hover:bg-forest-50 hover:border-forest-300 ${selectedAddressId === 'new' ? 'border-forest-500 bg-forest-50 text-forest-600' : 'border-gray-200 text-gray-400'}`}>
+                      <FiPlus className="text-lg" />
                       <span className="text-sm font-semibold">New Address</span>
                     </div>
                   </div>
@@ -176,9 +198,23 @@ const Checkout = () => {
 
               {(!user?.addresses?.length || selectedAddressId === 'new') && (
                 <div className="card p-6">
-                  <h3 className="font-display font-bold text-lg text-gray-800 mb-5 flex items-center gap-2">
-                    <FiMapPin className="text-forest-500" /> {user?.addresses?.length > 0 ? 'Enter New Address' : 'Shipping Address'}
-                  </h3>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-display font-bold text-lg text-gray-800 flex items-center gap-2">
+                      <FiMapPin className="text-forest-500" /> {user?.addresses?.length > 0 ? 'Enter New Address' : 'Shipping Address'}
+                    </h3>
+                    
+                    {user && (
+                      <div className="flex bg-gray-100 p-1 rounded-xl gap-1">
+                        {['Home', 'Work', 'Other'].map((label) => (
+                          <button key={label} type="button" onClick={() => setForm({ ...form, label })}
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${form.label === label ? 'bg-white text-forest-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {[
                       { name: 'fullName', label: 'Full Name',    placeholder: 'Your full name', col: 'sm:col-span-2' },
@@ -189,16 +225,24 @@ const Checkout = () => {
                       { name: 'state',    label: 'State',          placeholder: 'State'                               },
                     ].map(({ name, label, placeholder, col = '', type = 'text' }) => (
                       <div key={name} className={col}>
-                        <label className="label">{label} *</label>
+                        <div className="flex justify-between items-center mb-1.5">
+                          <label className="text-xs font-bold text-gray-600 uppercase tracking-tight">{label} *</label>
+                          {(name === 'city' || name === 'state') && form.pincode?.length === 6 && (
+                            <span className="text-[10px] text-forest-600 font-bold bg-forest-50 px-1.5 rounded animate-pulse">Auto-filled</span>
+                          )}
+                        </div>
                         <input name={name} type={type} value={form[name]} onChange={handleChange} required placeholder={placeholder} className="input-field" />
                       </div>
                     ))}
                   </div>
 
                   {user && (
-                    <label className="flex items-center gap-2 mt-4 cursor-pointer">
-                      <input type="checkbox" checked={saveAddress} onChange={() => setSaveAddress(!saveAddress)} className="w-4 h-4 rounded text-forest-600 focus:ring-forest-500" />
-                      <span className="text-sm text-gray-600 font-medium">Save this address for future use</span>
+                    <label className="flex items-center gap-2 mt-6 p-4 bg-gray-50 rounded-2xl border border-gray-100 cursor-pointer hover:bg-forest-50 transition-colors group">
+                      <input type="checkbox" checked={saveAddress} onChange={() => setSaveAddress(!saveAddress)} className="w-5 h-5 rounded-lg border-gray-300 text-forest-600 focus:ring-forest-500 transition-all" />
+                      <div>
+                        <p className="text-sm font-bold text-gray-800">Save address as {form.label}</p>
+                        <p className="text-xs text-gray-500">Enable faster checkout for your next purchase</p>
+                      </div>
                     </label>
                   )}
                 </div>
