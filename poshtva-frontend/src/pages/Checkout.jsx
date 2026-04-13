@@ -6,7 +6,6 @@ import { ordersAPI, paymentAPI, authAPI } from '../api/index';
 import toast from 'react-hot-toast';
 import { FiMapPin, FiCreditCard, FiLock, FiCheck, FiPlus } from 'react-icons/fi';
 import { getImageUrl } from '../utils/imageHelper';
-import MapPicker from '../components/MapPicker';
 
 const Checkout = () => {
   const { cart, clearCart }   = useCart();
@@ -16,7 +15,6 @@ const Checkout = () => {
   const [loading, setLoading] = useState(false);
   const [saveAddress, setSaveAddress] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState('');
-  const [coords, setCoords]   = useState(null);
   const [form, setForm]       = useState({
     fullName: user?.name || '', phone: '', street: '', city: '', state: '', pincode: ''
   });
@@ -80,7 +78,7 @@ const Checkout = () => {
       const razorpayLoaded = await loadRazorpay();
       if (!razorpayLoaded) { toast.error('Payment gateway failed to load'); setLoading(false); return; }
 
-      const shippingWithCoords = { ...form, location: coords };
+      const shippingWithCoords = { ...form };
 
       // Create order in DB
       const { order: dbOrder } = await ordersAPI.create({
@@ -141,17 +139,6 @@ const Checkout = () => {
       toast.error(err.response?.data?.message || 'Something went wrong');
       setLoading(false);
     }
-  };
-
-  const handleMapAddressDetect = (address) => {
-    setForm(prev => ({
-      ...prev,
-      street: address.street || prev.street,
-      city: address.city || prev.city,
-      state: address.state || prev.state,
-      pincode: address.pincode || prev.pincode
-    }));
-    toast.success('Address auto-filled from map!');
   };
 
   return (
@@ -216,15 +203,6 @@ const Checkout = () => {
                   )}
                 </div>
               )}
-
-              {/* Map Section */}
-              <div className="card p-6">
-                <h3 className="font-display font-bold text-lg text-gray-800 mb-2 flex items-center gap-2">
-                  <FiMapPin className="text-forest-500" /> Precise Location
-                </h3>
-                <p className="text-sm text-gray-500 mb-4 italic">Tap the map to pin your exact house/building for faster delivery</p>
-                <MapPicker onLocationSelect={setCoords} onAddressDetect={handleMapAddressDetect} />
-              </div>
 
               {/* Payment Method */}
               <div className="card p-6">
