@@ -18,6 +18,7 @@ const Checkout = () => {
   const [form, setForm]       = useState({
     fullName: user?.name || '', phone: '', street: '', city: '', state: '', pincode: '', label: 'Home'
   });
+  const [pincodeLoading, setPincodeLoading] = useState(false);
 
   const { subtotal = 0, tax = 0, shipping = 0, total = 0 } = state || {};
 
@@ -44,6 +45,7 @@ const Checkout = () => {
   useEffect(() => {
     if (form.pincode && form.pincode.length === 6 && selectedAddressId === 'new') {
       const fetchLocation = async () => {
+        setPincodeLoading(true);
         try {
           const res = await fetch(`https://api.postalpincode.in/pincode/${form.pincode}`);
           const data = await res.json();
@@ -53,6 +55,8 @@ const Checkout = () => {
           }
         } catch (err) {
           console.error('Pincode fetch error:', err);
+        } finally {
+          setPincodeLoading(false);
         }
       };
       fetchLocation();
@@ -227,8 +231,17 @@ const Checkout = () => {
                       <div key={name} className={col}>
                         <div className="flex justify-between items-center mb-1.5">
                           <label className="text-xs font-bold text-gray-600 uppercase tracking-tight">{label} *</label>
-                          {(name === 'city' || name === 'state') && form.pincode?.length === 6 && (
-                            <span className="text-[10px] text-forest-600 font-bold bg-forest-50 px-1.5 rounded animate-pulse">Auto-filled</span>
+                          {(name === 'city' || name === 'state') && (
+                            <>
+                              {pincodeLoading && (
+                                <span className="text-[10px] text-gray-400 font-bold bg-gray-50 px-1.5 rounded animate-pulse">Fetching...</span>
+                              )}
+                              {!pincodeLoading && form[name] && form.pincode?.length === 6 && (
+                                <span className="text-[10px] text-forest-600 font-bold bg-forest-50 px-1.5 rounded shadow-sm flex items-center gap-1">
+                                  <FiCheck className="text-[8px]" /> Auto-filled
+                                </span>
+                              )}
+                            </>
                           )}
                         </div>
                         <input name={name} type={type} value={form[name]} onChange={handleChange} required placeholder={placeholder} className="input-field" />
