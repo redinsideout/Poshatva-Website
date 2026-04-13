@@ -1,5 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import { FiCrosshair } from 'react-icons/fi';
+import toast from 'react-hot-toast';
 
 const containerStyle = {
   width: '100%',
@@ -12,6 +14,7 @@ const MapPicker = ({ onLocationSelect, initialPosition }) => {
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY
   });
 
+  const mapRef = useRef(null);
   const [markerPosition, setMarkerPosition] = useState(
     initialPosition ? { lat: initialPosition[0], lng: initialPosition[1] } : null
   );
@@ -28,13 +31,41 @@ const MapPicker = ({ onLocationSelect, initialPosition }) => {
     onLocationSelect(newPos);
   }, [onLocationSelect]);
 
+  const onLoad = useCallback((map) => {
+    mapRef.current = map;
+  }, []);
+
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const newPos = { lat: latitude, lng: longitude };
+        setMarkerPosition(newPos);
+        onLocationSelect(newPos);
+        if (mapRef.current) {
+          mapRef.current.panTo(newPos);
+          mapRef.current.setZoom(16);
+        }
+      },
+      () => {
+        toast.error('Unable to retrieve your location. Please check your permissions.');
+      }
+    );
+  };
+
   return isLoaded ? (
-    <div className="h-[300px] w-full rounded-2xl overflow-hidden border-2 border-forest-100 shadow-inner mt-4 relative z-0">
+    <div className="h-[350px] w-full rounded-2xl overflow-hidden border-2 border-forest-100 shadow-inner mt-4 relative z-0">
       <GoogleMap
         mapContainerStyle={containerStyle}
         center={markerPosition || defaultCenter}
         zoom={13}
         onClick={onMapClick}
+        onLoad={onLoad}
         options={{
           disableDefaultUI: false,
           zoomControl: true,
@@ -45,12 +76,23 @@ const MapPicker = ({ onLocationSelect, initialPosition }) => {
       >
         {markerPosition && <Marker position={markerPosition} />}
       </GoogleMap>
-      <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur px-3 py-1.5 rounded-lg text-[10px] text-gray-500 z-[1000] pointer-events-none shadow-sm">
+      
+      {/* Locate Me Button */}
+      <button 
+        type="button"
+        onClick={handleLocateMe}
+        className="absolute top-2 right-2 bg-white p-2.5 rounded-xl shadow-lg hover:bg-gray-50 text-forest-600 transition-all z-[1000] border border-gray-100 flex items-center gap-2 font-semibold text-xs"
+      >
+        <FiCrosshair className="text-lg" />
+        <span>Use My Location</span>
+      </button>
+
+      <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur px-3 py-1.5 rounded-lg text-[10px] text-gray-500 z-[1000] pointer-events-none shadow-sm">
         Tap on map for exact delivery location
       </div>
     </div>
   ) : (
-    <div className="h-[300px] w-full bg-gray-100 rounded-2xl animate-pulse flex items-center justify-center text-gray-400 text-xs mt-4">
+    <div className="h-[350px] w-full bg-gray-100 rounded-2xl animate-pulse flex items-center justify-center text-gray-400 text-xs mt-4">
       Loading Maps...
     </div>
   );
