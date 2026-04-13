@@ -35,24 +35,24 @@ const Login = () => {
           <div className="absolute top-20 left-20 w-40 h-40 bg-white/5 rounded-full blur-2xl" />
           <div className="absolute bottom-20 right-20 w-60 h-60 bg-white/5 rounded-full blur-3xl" />
         </div>
-        <div className="relative z-10 text-center text-white p-10 flex flex-col items-center">
-          <div className="w-32 h-32 bg-white rounded-3xl shadow-xl flex items-center justify-center overflow-hidden mb-6 animate-float p-2">
+        <Link to="/" className="relative z-10 text-center text-white p-10 flex flex-col items-center hover:scale-105 transition-transform">
+          <div className="w-32 h-32 bg-white rounded-3xl shadow-xl flex items-center justify-center overflow-hidden mb-6 animate-float p-2 text-center">
             <img src="/Poshlogo.jpeg" alt="Poshatva" className="w-full h-full object-contain rounded-2xl" />
           </div>
           <h2 className="text-4xl font-display font-bold mb-4">Welcome back!</h2>
           <p className="text-green-100 text-lg">Your plants missed you 🌿</p>
-        </div>
+        </Link>
       </div>
 
       {/* Right — Form */}
       <div className="flex-1 flex items-center justify-center p-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-          <div className="flex items-center gap-2 mb-8">
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow overflow-hidden p-0.5">
+          <Link to="/" className="flex items-center gap-2 mb-8 group">
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow overflow-hidden p-0.5 group-hover:scale-110 transition-transform">
               <img src="/Poshlogo.jpeg" alt="Poshatva" className="w-full h-full object-contain rounded-lg" />
             </div>
-            <span className="text-xl font-display font-bold text-forest-800">Poshatva</span>
-          </div>
+            <span className="text-xl font-display font-bold text-forest-800 group-hover:text-forest-600 transition-colors">Poshatva</span>
+          </Link>
           <h1 className="text-3xl font-display font-bold text-gray-900 mb-2">Sign in</h1>
           <p className="text-gray-500 mb-8">Welcome back to Poshatva</p>
 

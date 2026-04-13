@@ -32,7 +32,7 @@ const Register = () => {
   return (
     <div className="min-h-screen flex">
       <div className="hidden lg:flex lg:w-1/2 gradient-bg items-center justify-center relative overflow-hidden">
-        <div className="relative z-10 text-center text-white p-10 flex flex-col items-center">
+        <Link to="/" className="relative z-10 text-center text-white p-10 flex flex-col items-center hover:scale-105 transition-transform">
           <div className="w-32 h-32 bg-white rounded-3xl shadow-xl flex items-center justify-center overflow-hidden mb-6 animate-float p-2 text-center">
             <img src="/Poshlogo.jpeg" alt="Poshatva" className="w-full h-full object-contain rounded-2xl" />
           </div>
@@ -46,17 +46,17 @@ const Register = () => {
               </div>
             ))}
           </div>
-        </div>
+        </Link>
       </div>
 
       <div className="flex-1 flex items-center justify-center p-6 overflow-y-auto">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md py-8">
-          <div className="flex items-center gap-2 mb-8">
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow overflow-hidden p-0.5">
+          <Link to="/" className="flex items-center gap-2 mb-8 group">
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow overflow-hidden p-0.5 group-hover:scale-110 transition-transform">
               <img src="/Poshlogo.jpeg" alt="Poshatva" className="w-full h-full object-contain rounded-lg" />
             </div>
-            <span className="text-xl font-display font-bold text-forest-800">Poshatva</span>
-          </div>
+            <span className="text-xl font-display font-bold text-forest-800 group-hover:text-forest-600 transition-colors">Poshatva</span>
+          </Link>
           <h1 className="text-3xl font-display font-bold text-gray-900 mb-2">Create account</h1>
           <p className="text-gray-500 mb-8">Join thousands of happy plant parents</p>
 
