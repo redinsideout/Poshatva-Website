@@ -44,6 +44,15 @@ const Checkout = () => {
 
   useEffect(() => {
     const isNewAddressMode = !selectedAddressId || selectedAddressId === 'new';
+    
+    // Clear city/state if pincode is removed or too short
+    if (isNewAddressMode && (!form.pincode || form.pincode.length < 6)) {
+      if (form.city || form.state) {
+        setForm(prev => ({ ...prev, city: '', state: '' }));
+      }
+      return;
+    }
+
     if (form.pincode && form.pincode.length === 6 && isNewAddressMode) {
       const fetchLocation = async () => {
         setPincodeLoading(true);
