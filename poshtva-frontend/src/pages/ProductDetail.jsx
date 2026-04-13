@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
-  FiShoppingCart, FiStar, FiPlus, FiMinus, FiCheck, FiPackage, 
-  FiTruck, FiChevronLeft, FiChevronRight, FiX, FiShoppingBag,
+  FiStar, FiPlus, FiMinus, FiCheck, 
+  FiTruck, FiChevronLeft, FiChevronRight, FiShoppingBag,
   FiMapPin, FiGift, FiAward, FiInfo, FiChevronDown, FiHelpCircle
 } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
@@ -89,7 +89,7 @@ const ProductDetail = () => {
     </div>
   );
 
-  const { name, description, price, discountPrice, stock, images, rating, numReviews, category, benefits, howToUse } = product;
+  const { name, description, price, discountPrice, stock, images, rating, numReviews, category, howToUse } = product;
   const effectivePrice = discountPrice > 0 ? discountPrice : price;
   const discount = discountPrice > 0 ? Math.round(((price - discountPrice) / price) * 100) : 0;
 
