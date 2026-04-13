@@ -48,15 +48,28 @@ const Checkout = () => {
       const fetchLocation = async () => {
         setPincodeLoading(true);
         try {
+          // Primary API: Indian Post (Best for Districts)
           const res = await fetch(`https://api.postalpincode.in/pincode/${form.pincode}`);
           const data = await res.json();
+          
           if (data && data[0].Status === 'Success') {
-            const { District, State } = data[0].PostOffice[0];
+            const postOffice = data[0].PostOffice[0];
             setForm(prev => ({ 
               ...prev, 
-              city: District || '', 
-              state: State || '' 
+              city: postOffice.District || postOffice.Block || '', 
+              state: postOffice.State || '' 
             }));
+          } else {
+            // Fallback API if Indian Post is slow/down
+            const fallbackRes = await fetch(`https://api.zippopotam.us/IN/${form.pincode}`);
+            const fallbackData = await fallbackRes.json();
+            if (fallbackData && fallbackData.places) {
+              setForm(prev => ({ 
+                ...prev, 
+                city: fallbackData.places[0]['place name'] || '', 
+                state: fallbackData.places[0].state || '' 
+              }));
+            }
           }
         } catch (err) {
           console.error('Pincode fetch error:', err);
