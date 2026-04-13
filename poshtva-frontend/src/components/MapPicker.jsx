@@ -1,65 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import React, { useState, useCallback } from 'react';
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 
-// Fix for default marker icons in Leaflet when using Webpack/Vite
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-
-let DefaultIcon = L.icon({
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41]
-});
-L.Marker.prototype.options.icon = DefaultIcon;
-
-const LocationMarker = ({ position, onClick }) => {
-  const map = useMap();
-  
-  useEffect(() => {
-    if (position) {
-      map.flyTo(position, 15);
-    }
-  }, [position, map]);
-
-  useMapEvents({
-    click(e) {
-      onClick(e.latlng);
-    },
-  });
-
-  return position === null ? null : (
-    <Marker position={position} />
-  );
+const containerStyle = {
+  width: '100%',
+  height: '100%'
 };
 
 const MapPicker = ({ onLocationSelect, initialPosition }) => {
-  const [position, setPosition] = useState(initialPosition || null);
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY
+  });
 
-  // Default to Muzaffarnagar coords if nothing provided
-  const center = initialPosition || [29.4727, 77.7085];
+  const [markerPosition, setMarkerPosition] = useState(
+    initialPosition ? { lat: initialPosition[0], lng: initialPosition[1] } : null
+  );
 
-  const handleMapClick = (latlng) => {
-    setPosition(latlng);
-    onLocationSelect({ lat: latlng.lat, lng: latlng.lng });
-  };
+  const defaultCenter = initialPosition 
+    ? { lat: initialPosition[0], lng: initialPosition[1] } 
+    : { lat: 29.4727, lng: 77.7085 }; // Muzaffarnagar
 
-  return (
+  const onMapClick = useCallback((e) => {
+    const lat = e.latLng.lat();
+    const lng = e.latLng.lng();
+    const newPos = { lat, lng };
+    setMarkerPosition(newPos);
+    onLocationSelect(newPos);
+  }, [onLocationSelect]);
+
+  return isLoaded ? (
     <div className="h-[300px] w-full rounded-2xl overflow-hidden border-2 border-forest-100 shadow-inner mt-4 relative z-0">
-      <MapContainer center={center} zoom={13} style={{ height: '100%', width: '100%' }}>
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <LocationMarker position={position} onClick={handleMapClick} />
-      </MapContainer>
+      <GoogleMap
+        mapContainerStyle={containerStyle}
+        center={markerPosition || defaultCenter}
+        zoom={13}
+        onClick={onMapClick}
+        options={{
+          disableDefaultUI: false,
+          zoomControl: true,
+          streetViewControl: false,
+          mapTypeControl: false,
+          fullscreenControl: false,
+        }}
+      >
+        {markerPosition && <Marker position={markerPosition} />}
+      </GoogleMap>
       <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur px-3 py-1.5 rounded-lg text-[10px] text-gray-500 z-[1000] pointer-events-none shadow-sm">
         Tap on map for exact delivery location
       </div>
     </div>
+  ) : (
+    <div className="h-[300px] w-full bg-gray-100 rounded-2xl animate-pulse flex items-center justify-center text-gray-400 text-xs mt-4">
+      Loading Maps...
+    </div>
   );
 };
 
-export default MapPicker;
+export default React.memo(MapPicker);
