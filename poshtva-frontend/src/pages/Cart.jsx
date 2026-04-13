@@ -46,7 +46,7 @@ const Cart = () => {
   );
 
   return (
-    <div className="pt-20 min-h-screen bg-gray-50">
+    <div className="pt-32 min-h-screen bg-gray-50">
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}

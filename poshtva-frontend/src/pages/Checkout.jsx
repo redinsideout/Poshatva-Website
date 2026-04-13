@@ -182,7 +182,7 @@ const Checkout = () => {
   };
 
   return (
-    <div className="pt-20 min-h-screen bg-gray-50">
+    <div className="pt-32 min-h-screen bg-gray-50">
       <div className="page-container py-10">
         <h1 className="section-title mb-8 text-left">Checkout</h1>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

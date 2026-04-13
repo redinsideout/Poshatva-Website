@@ -42,7 +42,7 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="pt-16">
+    <div className="pt-28">
       {/* Hero Section */}
       <section className="relative min-h-[90vh] flex items-center overflow-hidden gradient-bg">
         <div className="absolute inset-0 overflow-hidden">

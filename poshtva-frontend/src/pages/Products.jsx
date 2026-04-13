@@ -62,7 +62,7 @@ const Products = () => {
   const hasFilters = category || minPrice || maxPrice || search;
 
   return (
-    <div className="pt-20 min-h-screen bg-gray-50">
+    <div className="pt-32 min-h-screen bg-gray-50">
       <div className="page-container py-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">

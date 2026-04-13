@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { FiShoppingCart, FiUser, FiMenu, FiX, FiChevronDown, FiLogOut, FiPackage, FiSettings } from 'react-icons/fi';
+import { FiShoppingCart, FiUser, FiMenu, FiX, FiChevronDown, FiLogOut, FiPackage, FiSettings, FiSearch, FiShoppingBag } from 'react-icons/fi';
+import { FaWhatsapp } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import { categoriesAPI } from '../api';
 
 const Navbar = () => {
   const { user, logout, isAdmin } = useAuth();
@@ -12,129 +14,171 @@ const Navbar = () => {
   const [mobileOpen, setMobileOpen]   = useState(false);
   const [userMenu, setUserMenu]       = useState(false);
   const [scrolled, setScrolled]       = useState(false);
+  const [categories, setCategories]   = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
+    categoriesAPI.getAll().then(res => setCategories(res.categories || [])).catch(console.error);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navLinks = [
-    { to: '/',        label: 'Home'     },
-    { to: '/products',label: 'Products' },
-  ];
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+    }
+  };
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-md shadow-md' : 'bg-white shadow-sm'}`}>
-      <div className="page-container">
-        <div className="flex items-center justify-between h-16 md:h-18">
-
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow group-hover:scale-105 transition-transform bg-white overflow-hidden p-0.5">
-              <img src="/Poshlogo.jpeg" alt="Poshatva Logo" className="w-full h-full object-contain rounded-lg" />
-            </div>
-            <span className="text-xl font-display font-bold text-forest-800">Poshatva</span>
-          </Link>
-
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-1">
-            {navLinks.map(({ to, label }) => (
-              <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) =>
-                `px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${isActive ? 'text-forest-600 bg-forest-50' : 'text-gray-600 hover:text-forest-600 hover:bg-forest-50'}`
-              }>{label}</NavLink>
-            ))}
-          </nav>
-
-          {/* Right Actions */}
-          <div className="flex items-center gap-2">
-            {/* Cart */}
-            <Link to="/cart" className="relative p-2 rounded-xl text-gray-600 hover:text-forest-600 hover:bg-forest-50 transition-all">
-              <FiShoppingCart className="text-xl" />
-              {cartCount > 0 && (
-                <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}
-                  className="absolute -top-1 -right-1 bg-forest-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
-                  {cartCount > 9 ? '9+' : cartCount}
-                </motion.span>
-              )}
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm border-b border-gray-100">
+      
+      {/* Top Row: Logo, Search, Basic Actions */}
+      <div className="bg-white">
+        <div className="page-container">
+          <div className="flex items-center justify-between h-16 md:h-20 gap-4 md:gap-8">
+            
+            {/* Logo */}
+            <Link to="/" className="flex items-center gap-2 shrink-0">
+              <img src="/Poshlogo.jpeg" alt="Logo" className="w-10 h-10 md:w-12 md:h-12 object-contain" />
+              <span className="text-xl md:text-2xl font-display font-bold text-forest-900 tracking-tight">Poshatva</span>
             </Link>
 
-            {/* User Menu */}
-            {user ? (
-              <div className="relative">
-                <button onClick={() => setUserMenu(!userMenu)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-forest-50 transition-all text-gray-700">
-                  <div className="w-8 h-8 bg-forest-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                    {user.name?.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="hidden md:block text-sm font-medium max-w-[100px] truncate">{user.name}</span>
-                  <FiChevronDown className={`text-sm transition-transform ${userMenu ? 'rotate-180' : ''}`} />
-                </button>
-                <AnimatePresence>
-                  {userMenu && (
-                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-                      className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-card-hover border border-gray-100 overflow-hidden z-50">
-                      <div className="p-3 bg-forest-50 border-b border-gray-100">
-                        <p className="font-semibold text-forest-800 text-sm">{user.name}</p>
-                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                      </div>
-                      <div className="p-1">
-                        {isAdmin && (
-                          <Link to="/admin/dashboard" onClick={() => setUserMenu(false)}
-                            className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-forest-50 hover:text-forest-700 rounded-xl transition-all">
-                            <FiSettings /> Admin Panel
-                          </Link>
-                        )}
-                        <Link to="/profile" onClick={() => setUserMenu(false)}
-                          className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-forest-50 hover:text-forest-700 rounded-xl transition-all">
-                          <FiUser /> My Profile
-                        </Link>
-                        <Link to="/orders" onClick={() => setUserMenu(false)}
-                          className="flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 hover:bg-forest-50 hover:text-forest-700 rounded-xl transition-all">
-                          <FiPackage /> My Orders
-                        </Link>
-                        <button onClick={() => { logout(); setUserMenu(false); navigate('/'); }}
-                          className="flex items-center gap-3 px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-xl transition-all w-full text-left">
-                          <FiLogOut /> Sign Out
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Link to="/login" className="hidden md:block btn-outline text-sm py-2 px-4">Login</Link>
-                <Link to="/register" className="btn-primary text-sm py-2 px-4">Sign Up</Link>
-              </div>
-            )}
+            {/* Desktop Search Bar */}
+            <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-2xl relative group">
+              <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-forest-500 transition-colors" />
+              <input 
+                type="text" 
+                placeholder="Search for Plants, Seeds, organic tools..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 rounded-full py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-forest-500/10 focus:border-forest-500 transition-all"
+              />
+            </form>
 
-            {/* Mobile Menu Toggle */}
-            <button onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden p-2 rounded-xl text-gray-600 hover:bg-forest-50 transition-all">
-              {mobileOpen ? <FiX className="text-xl" /> : <FiMenu className="text-xl" />}
-            </button>
+            {/* Right Actions */}
+            <div className="flex items-center gap-1 md:gap-4">
+              <a href="https://wa.me/91XXXXXXXXXX" target="_blank" rel="noreferrer" 
+                 className="p-2 text-forest-500 hover:bg-forest-50 rounded-full transition-all text-xl" title="WhatsApp Support">
+                <FaWhatsapp />
+              </a>
+
+              {user ? (
+                <div className="relative">
+                  <button onClick={() => setUserMenu(!userMenu)} 
+                          className="flex items-center gap-1 p-2 text-gray-600 hover:text-forest-600 hover:bg-forest-50 rounded-full transition-all">
+                    <FiUser className="text-xl" />
+                  </button>
+                  <AnimatePresence>
+                    {userMenu && (
+                      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
+                        className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50">
+                        <div className="p-4 bg-forest-50 border-b border-gray-100 text-sm">
+                          <p className="font-bold text-forest-800">{user.name}</p>
+                          <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                        </div>
+                        <div className="p-1.5">
+                          {isAdmin && (
+                            <Link to="/admin" onClick={() => setUserMenu(false)} className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-forest-50 rounded-lg">
+                              <FiSettings /> Dashboard
+                            </Link>
+                          )}
+                          <Link to="/profile" onClick={() => setUserMenu(false)} className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-forest-50 rounded-lg">
+                            <FiUser /> Profile
+                          </Link>
+                          <Link to="/orders" onClick={() => setUserMenu(false)} className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-forest-50 rounded-lg">
+                            <FiPackage /> Orders
+                          </Link>
+                          <button onClick={() => { logout(); setUserMenu(false); navigate('/'); }}
+                                  className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg">
+                            <FiLogOut /> Sign Out
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <Link to="/login" className="p-2 text-gray-600 hover:text-forest-600 transition-all"><FiUser className="text-xl" /></Link>
+              )}
+
+              <Link to="/cart" className="relative p-2 text-gray-600 hover:text-forest-600 transition-all">
+                <FiShoppingBag className="text-xl" />
+                {cartCount > 0 && (
+                  <span className="absolute top-1 right-0.5 bg-forest-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+
+              <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2 text-gray-600">
+                {mobileOpen ? <FiX className="text-xl" /> : <FiMenu className="text-xl" />}
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Bottom Row: Navigation Links */}
+      <div className="hidden md:block bg-white border-t border-gray-50 overflow-x-auto scrollbar-hide">
+        <div className="page-container">
+          <nav className="flex items-center justify-center gap-8 h-12 uppercase text-[11px] font-bold tracking-widest text-gray-600">
+            <Link to="/products" className="hover:text-forest-600 transition-colors py-2 border-b-2 border-transparent hover:border-forest-500">All Plants</Link>
+            {categories.slice(0, 8).map(cat => (
+              <Link key={cat._id} to={`/products?category=${cat.name}`} 
+                    className="hover:text-forest-600 transition-colors py-2 border-b-2 border-transparent hover:border-forest-500 whitespace-nowrap">
+                {cat.name}
+              </Link>
+            ))}
+            <Link to="/profile" className="hover:text-forest-600 transition-colors">Offers</Link>
+          </nav>
+        </div>
+      </div>
+
+      {/* Mobile Search - Visible only on mobile */}
+      <div className="md:hidden bg-white px-4 pb-3">
+        <form onSubmit={handleSearch} className="relative">
+          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input 
+            type="text" 
+            placeholder="Search products..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-gray-50 border border-gray-200 rounded-full py-2 pl-9 pr-4 text-sm"
+          />
+        </form>
+      </div>
+
+      {/* Mobile Sidebar */}
       <AnimatePresence>
         {mobileOpen && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-            className="md:hidden bg-white border-t border-gray-100 overflow-hidden">
-            <nav className="page-container py-4 flex flex-col gap-1">
-              {navLinks.map(({ to, label }) => (
-                <NavLink key={to} to={to} end={to === '/'} onClick={() => setMobileOpen(false)}
-                  className={({ isActive }) =>
-                    `px-4 py-3 rounded-xl text-sm font-medium ${isActive ? 'text-forest-600 bg-forest-50' : 'text-gray-700'}`
-                  }>{label}</NavLink>
-              ))}
-              {!user && (
-                <Link to="/login" onClick={() => setMobileOpen(false)} className="px-4 py-3 text-sm font-medium text-gray-700">Login</Link>
-              )}
-            </nav>
-          </motion.div>
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMobileOpen(false)}
+                        className="fixed inset-0 bg-black/50 z-[60]" />
+            <motion.div initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
+                        className="fixed top-0 left-0 bottom-0 w-[280px] bg-white z-[70] shadow-2xl p-6">
+              <div className="flex items-center justify-between mb-8">
+                <span className="font-display font-bold text-xl text-forest-800">Menu</span>
+                <button onClick={() => setMobileOpen(false)}><FiX className="text-2xl" /></button>
+              </div>
+              <nav className="flex flex-col gap-4">
+                <Link to="/" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-gray-800">Home</Link>
+                <Link to="/products" onClick={() => setMobileOpen(false)} className="text-lg font-medium text-gray-800 border-b border-gray-50 pb-2">All Products</Link>
+                <div className="py-2">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Categories</p>
+                  <div className="flex flex-col gap-4 pl-2">
+                    {categories.map(cat => (
+                      <Link key={cat._id} to={`/products?category=${cat.name}`} onClick={() => setMobileOpen(false)} className="text-gray-600 hover:text-forest-600">
+                        {cat.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </nav>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </header>
