@@ -57,7 +57,7 @@ const Footer = () => {
           <div>
             <h4 className="font-display font-semibold text-white mb-4">Contact Us</h4>
             <ul className="space-y-3 text-sm text-forest-200">
-              <li className="flex items-start gap-3"><FiMail className="mt-0.5 flex-shrink-0 text-leaf" /><span>[EMAIL_ADDRESS]</span></li>
+              <li className="flex items-start gap-3"><FiMail className="mt-0.5 flex-shrink-0 text-leaf" /><span>poshatva@gmail.com</span></li>
               <li className="flex items-start gap-3"><FiPhone className="mt-0.5 flex-shrink-0 text-leaf" /><span>+91 8445684783</span></li>
               <li className="flex items-start gap-3"><FiMapPin className="mt-0.5 flex-shrink-0 text-leaf" /><span>Muzaffarnagar, Uttar Pradesh, India 251001</span></li>
             </ul>
