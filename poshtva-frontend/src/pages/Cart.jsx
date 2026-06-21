@@ -9,7 +9,7 @@ import AuthModal from '../components/AuthModal';
 
 const TAX_RATE = 0.05;
 const FREE_SHIPPING_THRESHOLD = 499;
-const SHIPPING_COST = 49;
+const SHIPPING_COST = 0;
 
 const Cart = () => {
   const { cart, cartLoading, updateQuantity, removeFromCart } = useCart();

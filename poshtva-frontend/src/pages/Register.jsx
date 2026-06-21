@@ -39,7 +39,7 @@ const Register = () => {
           <h2 className="text-4xl font-display font-bold mb-4">Join Poshatva</h2>
           <p className="text-green-100 text-lg">Start your green journey today</p>
           <div className="grid grid-cols-3 gap-6 mt-10">
-            {[['Free', 'Shipping above ₹499'], ['100%', 'Organic'], ['30-Day', 'Returns']].map(([val, label]) => (
+            {[['Free', 'Shipping on all orders'], ['100%', 'Organic'], ['30-Day', 'Returns']].map(([val, label]) => (
               <div key={label}>
                 <div className="text-2xl font-bold">{val}</div>
                 <div className="text-green-200 text-xs mt-1">{label}</div>

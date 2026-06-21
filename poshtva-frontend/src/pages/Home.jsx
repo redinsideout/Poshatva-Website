@@ -17,7 +17,7 @@ const CATEGORIES = [
 
 const FEATURES = [
   { icon: GiSolidLeaf,   title: '100% Organic',       desc: 'All products are certified organic with no harmful chemicals'  },
-  { icon: FiTruck,  title: 'Fast Delivery',       desc: 'Free shipping on orders above ₹499. Delivered in 3–5 days'     },
+  { icon: FiTruck,  title: 'Fast Delivery',       desc: 'Free shipping on all orders. Delivered in 3–5 days'     },
   { icon: FiShield, title: 'Quality Guaranteed',  desc: 'Lab-tested quality with 30-day satisfaction guarantee'         },
   { icon: FiStar,   title: 'Expert Support',      desc: 'Get personalized advice from our horticulture experts'          },
 ];

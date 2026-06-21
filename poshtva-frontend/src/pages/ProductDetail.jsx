@@ -248,7 +248,7 @@ const ProductDetail = () => {
             {/* Quick Benefits Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
-                { icon: FiTruck, title: 'Free Shipping', sub: 'On orders above ₹499' },
+                { icon: FiTruck, title: 'Free Shipping', sub: 'On all orders' },
                 { icon: FiGift,  title: 'Gift Packaging', sub: 'Eco-friendly safe pack' },
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-4 p-5 rounded-3xl bg-forest-50/30 border border-forest-50">
