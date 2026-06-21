@@ -6,6 +6,7 @@ import { FiCheckCircle, FiPackage, FiArrowRight } from 'react-icons/fi';
 const OrderSuccess = () => {
   const { state } = useLocation();
   const orderId   = state?.orderId;
+  const userType  = state?.userType;
 
   useEffect(() => { document.title = 'Order Confirmed — Poshatva'; }, []);
 
@@ -19,7 +20,11 @@ const OrderSuccess = () => {
         </motion.div>
         <h1 className="text-3xl font-display font-bold text-gray-900 mb-3">Order Confirmed! 🎉</h1>
         <p className="text-gray-500 mb-2">Thank you for your purchase from Poshatva!</p>
-        <p className="text-gray-500 mb-6 text-sm">A confirmation email has been sent to your email address.</p>
+        {userType === 'Guest' ? (
+          <p className="text-gray-500 mb-6 text-sm">Your order has been placed. You can view your order tracking status using the link below.</p>
+        ) : (
+          <p className="text-gray-500 mb-6 text-sm">A confirmation email has been sent to your email address.</p>
+        )}
         {orderId && (
           <div className="bg-forest-50 border border-forest-200 rounded-2xl p-4 mb-8">
             <p className="text-xs text-gray-500 mb-1">Order ID</p>

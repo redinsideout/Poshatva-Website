@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ordersAPI } from '../api/index';
+import { useAuth } from '../context/AuthContext';
 import { PageLoader } from '../components/LoadingSpinner';
 import OrderStatusBadge from '../components/OrderStatusBadge';
-import { FiArrowLeft, FiMapPin, FiPackage, FiTruck, FiCheck, FiClock } from 'react-icons/fi';
+import { FiArrowLeft, FiMapPin, FiPackage, FiTruck, FiCheck, FiClock, FiInfo, FiCreditCard } from 'react-icons/fi';
 
 import { getImageUrl } from '../utils/imageHelper';
 
@@ -18,6 +19,7 @@ const OrderDetail = () => {
   const { id }            = useParams();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { user }          = useAuth();
 
   useEffect(() => {
     ordersAPI.getById(id)
@@ -35,7 +37,7 @@ const OrderDetail = () => {
     <div className="pt-20 min-h-screen bg-gray-50">
       <div className="page-container py-10">
         <div className="flex items-center gap-3 mb-8">
-          <Link to="/profile" className="p-2 rounded-xl hover:bg-gray-200 transition-colors"><FiArrowLeft /></Link>
+          <Link to={user ? "/profile" : "/"} className="p-2 rounded-xl hover:bg-gray-200 transition-colors"><FiArrowLeft /></Link>
           <div>
             <h1 className="text-2xl font-display font-bold text-gray-900">Order #{order._id.slice(-8).toUpperCase()}</h1>
             <p className="text-gray-500 text-sm">{new Date(order.createdAt).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
@@ -94,16 +96,29 @@ const OrderDetail = () => {
           <div className="space-y-4">
             <div className="card p-6">
               <h3 className="font-semibold text-gray-800 mb-4">Price Summary</h3>
-              <div className="space-y-2 text-sm">
+              <div className="space-y-2 text-sm text-left">
                 <div className="flex justify-between text-gray-600"><span>Items</span><span>₹{order.itemsPrice?.toFixed(2)}</span></div>
                 <div className="flex justify-between text-gray-600"><span>Tax</span><span>₹{order.taxPrice?.toFixed(2)}</span></div>
                 <div className="flex justify-between text-gray-600"><span>Shipping</span><span>{order.shippingPrice === 0 ? 'Free' : `₹${order.shippingPrice}`}</span></div>
+                {order.codCharge > 0 && (
+                  <div className="flex justify-between text-gray-600"><span>COD Handling Fee</span><span>₹{order.codCharge.toFixed(2)}</span></div>
+                )}
                 <div className="flex justify-between font-bold border-t pt-2"><span>Total</span><span className="text-forest-700">₹{order.totalPrice?.toFixed(2)}</span></div>
               </div>
             </div>
+            
+            <div className="card p-6">
+              <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2"><FiInfo className="text-forest-500" /> Order Details</h3>
+              <div className="text-sm text-gray-600 space-y-1.5 text-left">
+                <div className="flex justify-between"><span>User Type</span><span className="font-medium text-gray-800">{order.userType || 'Registered'}</span></div>
+                <div className="flex justify-between"><span>Payment Method</span><span className="font-medium text-gray-800">{order.paymentMethod === 'cod' ? 'Cash on Delivery (COD)' : 'Online Payment'}</span></div>
+                <div className="flex justify-between"><span>Payment Status</span><span className={`font-semibold ${order.isPaid ? 'text-green-600' : 'text-amber-600'}`}>{order.isPaid ? 'Paid' : 'Unpaid'}</span></div>
+              </div>
+            </div>
+
             <div className="card p-6">
               <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2"><FiMapPin className="text-forest-500" /> Shipping Address</h3>
-              <div className="text-sm text-gray-600 space-y-0.5">
+              <div className="text-sm text-gray-600 space-y-0.5 text-left">
                 <p className="font-medium text-gray-800">{order.shippingAddress?.fullName}</p>
                 <p>{order.shippingAddress?.street}</p>
                 <p>{order.shippingAddress?.city}, {order.shippingAddress?.state}</p>

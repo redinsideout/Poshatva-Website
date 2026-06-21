@@ -4,12 +4,12 @@ const {
   createOrder, getMyOrders, getOrderById,
   markOrderAsPaid, getAllOrders, updateOrderStatus
 } = require('../controllers/orderController');
-const { protect, adminOnly } = require('../middleware/authMiddleware');
+const { protect, adminOnly, protectOptional } = require('../middleware/authMiddleware');
 
-router.post('/', protect, createOrder);
+router.post('/', protectOptional, createOrder);
 router.get('/my', protect, getMyOrders);
 router.get('/admin', protect, adminOnly, getAllOrders);
-router.get('/:id', protect, getOrderById);
+router.get('/:id', protectOptional, getOrderById);
 router.put('/:id/pay', protect, markOrderAsPaid);
 router.put('/:id/status', protect, adminOnly, updateOrderStatus);
 

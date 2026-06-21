@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     orderItems: [
       {
         product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
@@ -30,6 +30,8 @@ const orderSchema = new mongoose.Schema(
       razorpay_payment_id: String,
       razorpay_signature: String,
     },
+    userType: { type: String, enum: ['Guest', 'Registered'], default: 'Registered' },
+    codCharge: { type: Number, default: 0 },
     itemsPrice: { type: Number, required: true },
     taxPrice: { type: Number, default: 0 },
     shippingPrice: { type: Number, default: 0 },

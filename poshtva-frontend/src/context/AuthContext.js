@@ -40,13 +40,23 @@ export const AuthProvider = ({ children }) => {
     toast.success('Logged out successfully');
   };
 
+  const loginWithFirebase = async (firebaseUser) => {
+    const token = await firebaseUser.getIdToken();
+    const res = await authAPI.firebaseLogin(token);
+    const data = res.data || res;
+    localStorage.setItem('poshatva_token', data.token);
+    localStorage.setItem('poshatva_user', JSON.stringify(data.user));
+    setUser(data.user);
+    return data;
+  };
+
   const updateUser = (updatedUser) => {
     localStorage.setItem('poshatva_user', JSON.stringify(updatedUser));
     setUser(updatedUser);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser, isAdmin: user?.role === 'admin' }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, loginWithFirebase, updateUser, isAdmin: user?.role === 'admin' }}>
       {children}
     </AuthContext.Provider>
   );

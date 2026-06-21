@@ -77,8 +77,19 @@ const AdminOrderDetail = () => {
           {/* Customer */}
           <div className="card p-6">
             <h3 className="font-semibold text-gray-800 mb-3">Customer</h3>
-            <p className="font-medium text-gray-800">{order.user?.name}</p>
-            <p className="text-sm text-gray-500">{order.user?.email}</p>
+            {order.user ? (
+              <>
+                <p className="font-medium text-gray-800">{order.user.name}</p>
+                <p className="text-sm text-gray-500">{order.user.email}</p>
+                <span className="text-xs bg-forest-50 text-forest-700 px-2 py-0.5 rounded-full font-bold mt-2 inline-block">Registered Account</span>
+              </>
+            ) : (
+              <>
+                <p className="font-medium text-gray-800">{order.shippingAddress?.fullName}</p>
+                <p className="text-sm text-gray-500">{order.shippingAddress?.phone}</p>
+                <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-bold mt-2 inline-block">Guest Checkout</span>
+              </>
+            )}
           </div>
         </div>
 
@@ -99,11 +110,15 @@ const AdminOrderDetail = () => {
           {/* Payment */}
           <div className="card p-6">
             <h3 className="font-semibold text-gray-800 mb-3">Payment</h3>
-            <div className="space-y-2 text-sm">
+            <div className="space-y-2 text-sm text-left">
               <div className="flex justify-between"><span className="text-gray-500">Status</span><span>{order.isPaid ? <span className="badge-green">Paid</span> : <span className="badge-red">Unpaid</span>}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Method</span><span className="font-semibold text-gray-700">{order.paymentMethod === 'cod' ? 'Cash on Delivery (COD)' : 'Online (Razorpay)'}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">Items</span><span>₹{order.itemsPrice?.toFixed(2)}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">Tax</span><span>₹{order.taxPrice?.toFixed(2)}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">Shipping</span><span>{order.shippingPrice === 0 ? 'Free' : `₹${order.shippingPrice}`}</span></div>
+              {order.codCharge > 0 && (
+                <div className="flex justify-between"><span className="text-gray-500">COD Charge</span><span>₹{order.codCharge.toFixed(2)}</span></div>
+              )}
               <div className="flex justify-between font-bold border-t pt-2"><span>Total</span><span className="text-forest-700">₹{order.totalPrice?.toFixed(2)}</span></div>
             </div>
           </div>

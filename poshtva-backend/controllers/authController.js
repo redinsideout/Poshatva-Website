@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { verifyFirebaseToken } = require('../config/firebase');
 
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE });
@@ -97,4 +98,61 @@ const addAddress = asyncHandler(async (req, res) => {
   res.json({ success: true, user: updated });
 });
 
-module.exports = { register, login, getMe, updateProfile, addAddress };
+// @desc  Firebase sign in / sign up (Google & Phone)
+const firebaseLogin = asyncHandler(async (req, res) => {
+  const { token } = req.body;
+  if (!token) {
+    res.status(400);
+    throw new Error('Firebase ID token is required');
+  }
+
+  const decoded = await verifyFirebaseToken(token);
+  const { uid, email, phone_number, name, picture } = decoded;
+
+  let user = await User.findOne({ firebaseUid: uid });
+
+  if (!user) {
+    // Try to find by email if present, or by phone if present
+    if (email) {
+      user = await User.findOne({ email });
+    }
+    if (!user && phone_number) {
+      user = await User.findOne({ phone: phone_number });
+    }
+
+    if (user) {
+      // Link Firebase to existing account
+      user.firebaseUid = uid;
+      if (!user.phone && phone_number) user.phone = phone_number;
+      if (picture && !user.avatar) user.avatar = picture;
+      await user.save();
+      console.log(`🔗 Linked existing user account: ${user.email || user.phone} to Firebase UID: ${uid}`);
+    } else {
+      // Create new user
+      user = await User.create({
+        name: name || 'User',
+        email: email || undefined,
+        phone: phone_number || undefined,
+        firebaseUid: uid,
+        avatar: picture || '',
+      });
+      console.log(`🌱 Created new user via Firebase: ${user.email || user.phone}`);
+    }
+  }
+
+  res.json({
+    success: true,
+    token: generateToken(user._id),
+    user: { 
+      _id: user._id, 
+      name: user.name, 
+      email: user.email, 
+      role: user.role, 
+      phone: user.phone, 
+      addresses: user.addresses,
+      avatar: user.avatar || ''
+    },
+  });
+});
+
+module.exports = { register, login, getMe, updateProfile, addAddress, firebaseLogin };

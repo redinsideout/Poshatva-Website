@@ -4,8 +4,9 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { ordersAPI, paymentAPI, authAPI } from '../api/index';
 import toast from 'react-hot-toast';
-import { FiMapPin, FiCreditCard, FiLock, FiCheck, FiPlus, FiHome, FiBriefcase } from 'react-icons/fi';
+import { FiMapPin, FiCreditCard, FiLock, FiCheck, FiPlus, FiHome, FiBriefcase, FiUser } from 'react-icons/fi';
 import { getImageUrl } from '../utils/imageHelper';
+import AuthModal from '../components/AuthModal';
 
 const Checkout = () => {
   const { cart, clearCart }   = useCart();
@@ -15,12 +16,23 @@ const Checkout = () => {
   const [loading, setLoading] = useState(false);
   const [saveAddress, setSaveAddress] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('razorpay'); // 'razorpay' or 'cod'
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [form, setForm]       = useState({
     fullName: user?.name || '', phone: '', street: '', city: '', state: '', pincode: '', label: 'Home'
   });
   const [pincodeLoading, setPincodeLoading] = useState(false);
 
   const { subtotal = 0, tax = 0, shipping = 0, total = 0 } = state || {};
+  const codCharge = paymentMethod === 'cod' ? 59 : 0;
+  const finalTotal = total + codCharge;
+
+  // Auto-fill user name if they log in dynamically
+  useEffect(() => {
+    if (user && !form.fullName) {
+      setForm(prev => ({ ...prev, fullName: user.name || '' }));
+    }
+  }, [user]);
 
   // Auto-fill from saved addresses
   useEffect(() => {
@@ -108,9 +120,6 @@ const Checkout = () => {
 
     setLoading(true);
     try {
-      const razorpayLoaded = await loadRazorpay();
-      if (!razorpayLoaded) { toast.error('Payment gateway failed to load'); setLoading(false); return; }
-
       const shippingWithCoords = { ...form };
 
       // Create order in DB
@@ -123,11 +132,11 @@ const Checkout = () => {
           quantity: item.quantity,
         })),
         shippingAddress: shippingWithCoords,
-        paymentMethod:   'razorpay',
+        paymentMethod:   paymentMethod,
         itemsPrice:  subtotal,
         taxPrice:    tax,
         shippingPrice: shipping,
-        totalPrice:  total,
+        totalPrice:  finalTotal,
       });
 
       // Save address if requested
@@ -138,9 +147,20 @@ const Checkout = () => {
         } catch (err) { console.error('Failed to save address:', err); }
       }
 
+      if (paymentMethod === 'cod') {
+        await clearCart();
+        toast.success('Order placed successfully! 🌱');
+        navigate('/order-success', { state: { orderId: dbOrder._id, userType: user ? 'Registered' : 'Guest' } });
+        return;
+      }
+
+      // Online payment (Razorpay) flow
+      const razorpayLoaded = await loadRazorpay();
+      if (!razorpayLoaded) { toast.error('Payment gateway failed to load'); setLoading(false); return; }
+
       // Create Razorpay order
       const { order: rzpOrder, key } = await paymentAPI.createOrder({
-        amount:  total,
+        amount:  finalTotal,
         receipt: dbOrder._id,
       });
 
@@ -156,7 +176,7 @@ const Checkout = () => {
             await paymentAPI.verify(response);
             await ordersAPI.markPaid(dbOrder._id, response);
             await clearCart();
-            navigate('/order-success', { state: { orderId: dbOrder._id } });
+            navigate('/order-success', { state: { orderId: dbOrder._id, userType: user ? 'Registered' : 'Guest' } });
           } catch (err) {
             toast.error('Payment verification failed');
           }
@@ -291,24 +311,97 @@ const Checkout = () => {
 
               {/* Payment Method */}
               <div className="card p-6">
-                <h3 className="font-display font-bold text-lg text-gray-800 mb-4 flex items-center gap-2"><FiCreditCard className="text-forest-500" /> Payment</h3>
-                <div className="flex items-center gap-3 p-4 border-2 border-forest-500 rounded-xl bg-forest-50">
-                  <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm p-1">
-                    <img src="https://razorpay.com/favicon.png" alt="Razorpay" className="w-full h-full object-contain" />
+                <h3 className="font-display font-bold text-lg text-gray-800 mb-4 flex items-center gap-2"><FiCreditCard className="text-forest-500" /> Payment Method</h3>
+                <div className="space-y-4">
+                  {/* Razorpay Option */}
+                  <div 
+                    type="button"
+                    onClick={() => setPaymentMethod('razorpay')}
+                    className={`flex items-center gap-3 p-4 border-2 rounded-2xl cursor-pointer transition-all ${
+                      paymentMethod === 'razorpay' 
+                        ? 'border-forest-500 bg-forest-50/50 shadow-sm' 
+                        : 'border-gray-100 hover:border-gray-200 bg-white'
+                    }`}
+                  >
+                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm p-1 border border-gray-100">
+                      <img src="https://razorpay.com/favicon.png" alt="Razorpay" className="w-8 h-8 object-contain" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="font-bold text-gray-800 text-sm">Online Payment</p>
+                      <p className="text-xs text-gray-500">Pay securely via UPI, Cards, Net Banking & Wallets</p>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                      paymentMethod === 'razorpay' ? 'border-forest-500' : 'border-gray-300'
+                    }`}>
+                      {paymentMethod === 'razorpay' && <div className="w-2.5 h-2.5 rounded-full bg-forest-500" />}
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-800 text-sm">Razorpay</p>
-                    <p className="text-xs text-gray-500">UPI, Cards, Net Banking & Wallets</p>
-                  </div>
-                  <div className="w-4 h-4 rounded-full border-2 border-forest-500 flex items-center justify-center">
-                    <div className="w-2 h-2 rounded-full bg-forest-500" />
-                  </div>
+
+                  {/* COD Option */}
+                  {user ? (
+                    <div 
+                      type="button"
+                      onClick={() => setPaymentMethod('cod')}
+                      className={`flex flex-col gap-1 p-4 border-2 rounded-2xl cursor-pointer transition-all ${
+                        paymentMethod === 'cod' 
+                          ? 'border-forest-500 bg-forest-50/50 shadow-sm' 
+                          : 'border-gray-100 hover:border-gray-200 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-forest-50 rounded-lg flex items-center justify-center shadow-sm text-lg border border-forest-100">
+                          📦
+                        </div>
+                        <div className="flex-1 text-left">
+                          <p className="font-bold text-gray-800 text-sm">Cash on Delivery (COD)</p>
+                          <p className="text-xs text-gray-500">Pay cash when order is delivered</p>
+                        </div>
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                          paymentMethod === 'cod' ? 'border-forest-500' : 'border-gray-300'
+                        }`}>
+                          {paymentMethod === 'cod' && <div className="w-2.5 h-2.5 rounded-full bg-forest-500" />}
+                        </div>
+                      </div>
+                      <div className="mt-2 text-xs text-gray-500 font-medium pl-13 text-left">
+                        Additional COD handling charge: <span className="font-bold text-gray-700">₹59</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 border-2 border-gray-100 border-dashed rounded-2xl bg-gray-50/50">
+                      <div className="flex items-center gap-3 opacity-60">
+                        <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center text-lg">
+                          📦
+                        </div>
+                        <div className="flex-1 text-left">
+                          <p className="font-bold text-gray-400 text-sm">Cash on Delivery (COD)</p>
+                          <p className="text-xs text-gray-400">Not available for guest checkout</p>
+                        </div>
+                        <div className="w-5 h-5 rounded-full border-2 border-gray-200" />
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-left">
+                        <p className="text-xs text-amber-700 font-semibold flex items-center gap-1.5">
+                          ⚠️ Cash on Delivery is available only for logged-in customers.
+                        </p>
+                        <button 
+                          type="button"
+                          onClick={() => setShowAuthModal(true)}
+                          className="text-xs font-bold text-forest-700 hover:text-forest-800 flex items-center gap-1 self-start sm:self-auto bg-forest-50 hover:bg-forest-100 px-3.5 py-2 rounded-xl border border-forest-200 shadow-sm transition-all"
+                        >
+                          Login to Enable COD
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
               <button type="submit" disabled={loading} className="btn-primary w-full py-4 text-base justify-center">
                 <FiLock />
-                {loading ? 'Processing...' : `Pay ₹${total.toFixed(2)} Securely`}
+                {loading 
+                  ? 'Processing...' 
+                  : paymentMethod === 'cod' 
+                    ? `Place Order (₹${finalTotal.toFixed(2)})` 
+                    : `Pay ₹${finalTotal.toFixed(2)} Securely`}
               </button>
             </form>
           </div>
@@ -336,11 +429,14 @@ const Checkout = () => {
                   );
                 })}
               </div>
-              <div className="border-t border-gray-100 pt-4 space-y-2 text-sm">
+              <div className="border-t border-gray-100 pt-4 space-y-2 text-sm text-left">
                 <div className="flex justify-between text-gray-600"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
                 <div className="flex justify-between text-gray-600"><span>Tax</span><span>₹{tax.toFixed(2)}</span></div>
                 <div className="flex justify-between text-gray-600"><span>Shipping</span><span className={shipping === 0 ? 'text-green-600 font-bold' : ''}>{shipping === 0 ? 'FREE' : `₹${shipping}`}</span></div>
-                <div className="flex justify-between font-bold text-base border-t border-gray-100 pt-2"><span>Total</span><span>₹{total.toFixed(2)}</span></div>
+                {codCharge > 0 && (
+                  <div className="flex justify-between text-gray-600"><span>COD Handling Fee</span><span>₹{codCharge.toFixed(2)}</span></div>
+                )}
+                <div className="flex justify-between font-bold text-base border-t border-gray-100 pt-2"><span>Total</span><span>₹{finalTotal.toFixed(2)}</span></div>
               </div>
               <div className="mt-4 flex items-center gap-2 text-xs text-gray-400">
                 <FiLock /> 100% secure & encrypted checkout
@@ -349,6 +445,13 @@ const Checkout = () => {
           </div>
         </div>
       </div>
+      <AuthModal 
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={() => {
+          toast.success("Welcome back! 🌱");
+        }}
+      />
     </div>
   );
 };

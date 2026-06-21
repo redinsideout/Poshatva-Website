@@ -57,11 +57,11 @@ function App() {
             <Route path="/cart"      element={<MainLayout><Cart /></MainLayout>}    />
             <Route path="/login"     element={<Login />}      />
             <Route path="/register"  element={<Register />}   />
-            <Route path="/checkout" element={<ProtectedRoute><MainLayout><Checkout /></MainLayout></ProtectedRoute>} />
-            <Route path="/order-success" element={<ProtectedRoute><MainLayout><OrderSuccess /></MainLayout></ProtectedRoute>} />
+            <Route path="/checkout" element={<MainLayout><Checkout /></MainLayout>} />
+            <Route path="/order-success" element={<MainLayout><OrderSuccess /></MainLayout>} />
             <Route path="/profile" element={<ProtectedRoute><MainLayout><Profile /></MainLayout></ProtectedRoute>} />
             <Route path="/orders" element={<ProtectedRoute><MainLayout><Profile /></MainLayout></ProtectedRoute>} />
-            <Route path="/orders/:id" element={<ProtectedRoute><MainLayout><OrderDetail /></MainLayout></ProtectedRoute>} />
+            <Route path="/orders/:id" element={<MainLayout><OrderDetail /></MainLayout>} />
 
             {/* Admin Routes */}
             <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />

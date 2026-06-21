@@ -27,11 +27,15 @@ const AdminOrders = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { document.title = 'Orders — Admin'; fetchOrders(); }, [status]);
 
-  const filtered = orders.filter((o) =>
-    o._id.toLowerCase().includes(search.toLowerCase()) ||
-    o.user?.name?.toLowerCase().includes(search.toLowerCase()) ||
-    o.user?.email?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = orders.filter((o) => {
+    const searchStr = search.toLowerCase();
+    const idMatches = o._id.toLowerCase().includes(searchStr);
+    const userNameMatches = o.user?.name?.toLowerCase().includes(searchStr);
+    const userEmailMatches = o.user?.email?.toLowerCase().includes(searchStr);
+    const shippingNameMatches = o.shippingAddress?.fullName?.toLowerCase().includes(searchStr);
+    const shippingPhoneMatches = o.shippingAddress?.phone?.includes(searchStr);
+    return idMatches || userNameMatches || userEmailMatches || shippingNameMatches || shippingPhoneMatches;
+  });
 
   return (
     <AdminLayout>
@@ -70,13 +74,32 @@ const AdminOrders = () => {
                   <tr key={order._id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-5 py-4 font-mono text-xs text-gray-600">#{order._id.slice(-8).toUpperCase()}</td>
                     <td className="px-5 py-4">
-                      <p className="font-medium text-gray-800">{order.user?.name}</p>
-                      <p className="text-xs text-gray-400 truncate max-w-[150px]">{order.user?.email}</p>
+                      {order.user ? (
+                        <>
+                          <p className="font-medium text-gray-800">{order.user.name}</p>
+                          <p className="text-xs text-gray-400 truncate max-w-[150px]">{order.user.email}</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="font-medium text-gray-800">{order.shippingAddress?.fullName}</p>
+                          <p className="text-[10px] text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded-full inline-block mt-1">Guest Checkout</p>
+                        </>
+                      )}
                     </td>
                     <td className="px-5 py-4 text-gray-600">{order.orderItems?.length}</td>
-                    <td className="px-5 py-4 font-semibold text-forest-700">₹{order.totalPrice?.toFixed(2)}</td>
                     <td className="px-5 py-4">
-                      {order.isPaid ? <span className="badge-green">Paid</span> : <span className="badge-red">Unpaid</span>}
+                      <div className="font-semibold text-forest-700">₹{order.totalPrice?.toFixed(2)}</div>
+                      {order.codCharge > 0 && (
+                        <div className="text-[10px] text-amber-600 font-bold">Incl. ₹{order.codCharge} COD fee</div>
+                      )}
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex flex-col gap-1 items-start">
+                        {order.isPaid ? <span className="badge-green">Paid</span> : <span className="badge-red">Unpaid</span>}
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider bg-gray-100 px-1.5 py-0.5 rounded-md mt-0.5">
+                          {order.paymentMethod === 'cod' ? 'COD' : 'Online'}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-5 py-4"><OrderStatusBadge status={order.orderStatus} /></td>
                     <td className="px-5 py-4 text-gray-500 text-xs whitespace-nowrap">
