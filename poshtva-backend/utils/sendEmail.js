@@ -17,12 +17,18 @@ const sendEmail = async ({ to, subject, html }) => {
   }
 
   try {
-    const data = await resend.emails.send({
-      from: 'Poshatva 🌱 <onboarding@resend.dev>',
+    const { data, error } = await resend.emails.send({
+      from: 'Poshatva 🌱 <orders@poshatva.com>',
       to,
       subject,
       html,
     });
+
+    if (error) {
+      console.error(`[EMAIL] Resend API error sending to ${to}:`, error);
+      throw new Error(error.message || 'Resend API error');
+    }
+
     return data;
   } catch (error) {
     console.error(`[EMAIL] Failed to send email to ${to}: ${error.message}`);
