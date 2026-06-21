@@ -4,7 +4,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { ordersAPI, paymentAPI, authAPI } from '../api/index';
 import toast from 'react-hot-toast';
-import { FiMapPin, FiCreditCard, FiLock, FiCheck, FiPlus, FiHome, FiBriefcase, FiUser } from 'react-icons/fi';
+import { FiMapPin, FiCreditCard, FiLock, FiCheck, FiPlus, FiHome, FiBriefcase } from 'react-icons/fi';
 import { getImageUrl } from '../utils/imageHelper';
 import AuthModal from '../components/AuthModal';
 
@@ -32,6 +32,7 @@ const Checkout = () => {
     if (user && !form.fullName) {
       setForm(prev => ({ ...prev, fullName: user.name || '' }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   // Auto-fill from saved addresses

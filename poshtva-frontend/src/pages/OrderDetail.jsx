@@ -4,7 +4,7 @@ import { ordersAPI } from '../api/index';
 import { useAuth } from '../context/AuthContext';
 import { PageLoader } from '../components/LoadingSpinner';
 import OrderStatusBadge from '../components/OrderStatusBadge';
-import { FiArrowLeft, FiMapPin, FiPackage, FiTruck, FiCheck, FiClock, FiInfo, FiCreditCard } from 'react-icons/fi';
+import { FiArrowLeft, FiMapPin, FiPackage, FiTruck, FiCheck, FiClock, FiInfo } from 'react-icons/fi';
 
 import { getImageUrl } from '../utils/imageHelper';
 
