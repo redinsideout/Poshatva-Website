@@ -1,22 +1,33 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
+// Initialize Resend
+const resend = new Resend(process.env.RESEND_API_KEY || 'dummy_key');
+
+/**
+ * Send email via Resend
+ * @param {Object} options
+ * @param {string} options.to - Recipient email
+ * @param {string} options.subject - Subject line
+ * @param {string} options.html - HTML body
+ */
 const sendEmail = async ({ to, subject, html }) => {
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+  if (!process.env.RESEND_API_KEY) {
+    console.log('[EMAIL] Skipping email send - RESEND_API_KEY not configured.');
+    return;
+  }
 
-  const mailOptions = {
-    from: `"Poshatva 🌱" <${process.env.EMAIL_USER}>`,
-    to,
-    subject,
-    html,
-  };
-
-  await transporter.sendMail(mailOptions);
+  try {
+    const data = await resend.emails.send({
+      from: 'Poshatva 🌱 <onboarding@resend.dev>',
+      to,
+      subject,
+      html,
+    });
+    return data;
+  } catch (error) {
+    console.error(`[EMAIL] Failed to send email to ${to}: ${error.message}`);
+    throw error;
+  }
 };
 
 module.exports = sendEmail;

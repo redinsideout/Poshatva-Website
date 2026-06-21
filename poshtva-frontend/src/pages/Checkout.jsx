@@ -19,7 +19,7 @@ const Checkout = () => {
   const [paymentMethod, setPaymentMethod] = useState('razorpay'); // 'razorpay' or 'cod'
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [form, setForm]       = useState({
-    fullName: user?.name || '', phone: '', street: '', city: '', state: '', pincode: '', label: 'Home'
+    fullName: user?.name || '', email: user?.email || '', phone: '', street: '', city: '', state: '', pincode: '', label: 'Home'
   });
   const [pincodeLoading, setPincodeLoading] = useState(false);
 
@@ -268,9 +268,10 @@ const Checkout = () => {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {[
                       { name: 'fullName', label: 'Full Name',    placeholder: 'Your full name', col: 'sm:col-span-2' },
+                      ...(!user ? [{ name: 'email', label: 'Email Address', placeholder: 'you@example.com', type: 'email', col: 'sm:col-span-2' }] : []),
                       { name: 'phone',    label: 'Phone Number', placeholder: '10-digit mobile', type: 'tel'         },
                       { name: 'pincode',  label: 'PIN Code',     placeholder: '6-digit pincode', type: 'number'      },
                       { name: 'street',   label: 'Street Address', placeholder: 'House no, street, area', col: 'sm:col-span-2' },
