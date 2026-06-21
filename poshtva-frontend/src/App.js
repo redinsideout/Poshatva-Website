@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
@@ -64,6 +64,7 @@ function App() {
             <Route path="/orders/:id" element={<MainLayout><OrderDetail /></MainLayout>} />
 
             {/* Admin Routes */}
+            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/admin/products"  element={<AdminRoute><AdminProducts /></AdminRoute>}  />
             <Route path="/admin/products/new"       element={<AdminRoute><AdminProductForm /></AdminRoute>} />

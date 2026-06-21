@@ -101,7 +101,7 @@ const Navbar = () => {
                         </div>
                         <div className="p-1.5">
                           {isAdmin && (
-                            <Link to="/admin" onClick={() => setUserMenu(false)} className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-forest-50 rounded-lg">
+                            <Link to="/admin/dashboard" onClick={() => setUserMenu(false)} className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-forest-50 rounded-lg">
                               <FiSettings /> Dashboard
                             </Link>
                           )}
