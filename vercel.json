@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "buildCommand": "cd poshtva-frontend && npm install && npm run build",
+  "outputDirectory": "poshtva-frontend/build",
+  "installCommand": "echo 'skip root install'",
+  "framework": "create-react-app"
+}
