@@ -178,7 +178,7 @@ const AdminProductForm = () => {
                 const imgSrc = url.startsWith('http') ? url : `${API_URL}${url}`;
                 return (
                   <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 group">
-                    <img src={imgSrc} alt={`Product image ${i + 1}`} className="w-full h-full object-cover" />
+                    <img src={imgSrc} alt={`Product preview ${i + 1}`} className="w-full h-full object-cover" />
                     <button type="button" onClick={() => removeImage(i)}
                       className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <FiX />
