@@ -61,16 +61,37 @@ const AdminProductForm = () => {
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
+
+    // --- Frontend validation ---
+    const MAX_SIZE_MB = 5;
+    const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    for (const file of files) {
+      if (!ALLOWED_TYPES.includes(file.type)) {
+        toast.error(`"${file.name}" is not a supported image type. Use JPG, PNG, or WEBP.`);
+        return;
+      }
+      if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+        toast.error(`"${file.name}" exceeds the ${MAX_SIZE_MB}MB size limit.`);
+        return;
+      }
+    }
+
     setUploading(true);
     try {
       const formData = new FormData();
       files.forEach((f) => formData.append('images', f));
+      console.log('[Upload] Sending', files.length, 'file(s) to /api/upload');
       const data = await uploadAPI.uploadImages(formData);
-      setForm({ ...form, images: [...form.images, ...data.urls] });
-      toast.success(`${data.urls.length} image(s) uploaded`);
+      console.log('[Upload] Success:', data);
+      setForm((prev) => ({ ...prev, images: [...prev.images, ...data.urls] }));
+      toast.success(`${data.urls.length} image(s) uploaded successfully!`);
     } catch (err) {
-      toast.error('Image upload failed');
-    } finally { setUploading(false); }
+      const serverMsg = err.response?.data?.message || err.message || 'Unknown error';
+      console.error('[Upload] Failed:', serverMsg, err.response?.data || err);
+      toast.error(`Image upload failed: ${serverMsg}`);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const removeImage = (idx) => setForm({ ...form, images: form.images.filter((_, i) => i !== idx) });
@@ -152,15 +173,19 @@ const AdminProductForm = () => {
           <div className="card p-6">
             <h3 className="font-semibold text-gray-800 mb-4">Product Images</h3>
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-4">
-              {form.images.map((url, i) => (
-                <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 group">
-                  <img src={`${API_URL}${url}`} alt="" className="w-full h-full object-cover" />
-                  <button type="button" onClick={() => removeImage(i)}
-                    className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <FiX />
-                  </button>
-                </div>
-              ))}
+              {form.images.map((url, i) => {
+                // Cloudinary returns absolute https:// URLs; local uploads are relative paths.
+                const imgSrc = url.startsWith('http') ? url : `${API_URL}${url}`;
+                return (
+                  <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 group">
+                    <img src={imgSrc} alt={`Product image ${i + 1}`} className="w-full h-full object-cover" />
+                    <button type="button" onClick={() => removeImage(i)}
+                      className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <FiX />
+                    </button>
+                  </div>
+                );
+              })}
               <label className="aspect-square rounded-xl border-2 border-dashed border-gray-300 hover:border-forest-400 flex flex-col items-center justify-center cursor-pointer transition-colors">
                 <FiUpload className="text-gray-400 text-xl mb-1" />
                 <span className="text-xs text-gray-400">Upload</span>

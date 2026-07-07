@@ -27,9 +27,9 @@ export const adminAPI = {
 };
 
 export const uploadAPI = {
-  uploadImages: (formData) => api.post('/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
+  // Do NOT manually set Content-Type here — axios auto-detects FormData
+  // and sets 'multipart/form-data; boundary=...' which multer requires.
+  uploadImages: (formData) => api.post('/upload', formData),
 };
 
 export * from './auth';

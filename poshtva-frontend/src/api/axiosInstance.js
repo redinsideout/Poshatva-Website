@@ -4,7 +4,10 @@ const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
-  headers: { 'Content-Type': 'application/json' },
+  // NOTE: Do NOT set a default Content-Type here.
+  // Axios auto-sets 'application/json' for plain objects and
+  // 'multipart/form-data; boundary=...' for FormData — the boundary
+  // is required for multer to parse uploads on the backend.
 });
 
 // Request interceptor — attach JWT
