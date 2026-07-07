@@ -21,12 +21,14 @@ app.use(cors({
     'https://poshatva.vercel.app',
     'https://poshatva.com',
     'https://www.poshatva.com',
+    // EC2 public URL (admin access via HTTP during development/testing)
+    'http://ec2-3-111-154-158.ap-south-1.compute.amazonaws.com',
   ],
   credentials: true,
 }));
 
-// Logging
-if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));
+// Logging — always on so AWS CloudWatch / PM2 logs show requests
+app.use(morgan('dev'));
 
 // Body parsers
 app.use(express.json({ limit: '10mb' }));
