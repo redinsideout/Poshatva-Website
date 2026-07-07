@@ -12,7 +12,7 @@ const BestSellers = ({ products = [] }) => {
   if (!products.length) return null;
 
   return (
-    <section className="section-padding bg-white">
+    <section className="section-padding bg-white overflow-hidden">
       <div className="page-container">
         {/* Header */}
         <div className="flex items-end justify-between mb-10">

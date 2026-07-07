@@ -46,7 +46,8 @@ const ComparisonSection = () => {
         </div>
 
         <div className="max-w-4xl mx-auto overflow-hidden rounded-2xl border border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.04)] bg-[#F8FAF8] p-4 md:p-8">
-          <table className="w-full border-collapse">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
             <thead>
               <tr className="border-b border-gray-200">
                 <th className="text-left pb-4 font-display font-semibold text-gray-400 text-xs md:text-sm tracking-wider uppercase">Features</th>
@@ -79,7 +80,8 @@ const ComparisonSection = () => {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       </div>
     </section>

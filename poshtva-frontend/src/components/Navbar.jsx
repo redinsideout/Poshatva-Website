@@ -69,14 +69,14 @@ const Navbar = () => {
       {/* Main Header Container */}
       <div className="bg-white">
         <div className="page-container">
-          <div className="flex items-center justify-between h-20 gap-4 md:gap-8">
+          <div className="flex items-center justify-between h-14 md:h-20 gap-4 md:gap-8">
             
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2.5 shrink-0 group">
-              <div className="w-11 h-11 bg-white rounded-xl flex items-center justify-center overflow-hidden border border-gray-100 p-0.5 group-hover:scale-105 transition-transform duration-300">
+            <Link to="/" className="flex items-center gap-1.5 md:gap-2.5 shrink-0 group">
+              <div className="w-8 h-8 md:w-11 md:h-11 bg-white rounded-lg md:rounded-xl flex items-center justify-center overflow-hidden border border-gray-100 p-0.5 group-hover:scale-105 transition-transform duration-300">
                 <img src="/Poshlogo.jpeg" alt="Poshatva Logo" className="w-full h-full object-contain rounded-lg" />
               </div>
-              <span className="text-2xl font-display font-black text-gray-900 tracking-tight">Poshatva</span>
+              <span className="text-base md:text-2xl font-display font-black text-gray-900 tracking-tight">Poshatva</span>
             </Link>
 
             {/* Desktop Large Search Bar */}
@@ -92,10 +92,10 @@ const Navbar = () => {
             </form>
 
             {/* Right Actions Menu */}
-            <div className="flex items-center gap-2 md:gap-4">
+            <div className="flex items-center gap-1 md:gap-4">
               {/* WhatsApp Help */}
               <a href="https://wa.me/918445684783" target="_blank" rel="noreferrer" 
-                 className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all text-xl" title="WhatsApp Support">
+                 className="hidden md:flex p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all text-xl" title="WhatsApp Support">
                 <FaWhatsapp />
               </a>
 

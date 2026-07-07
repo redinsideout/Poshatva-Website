@@ -68,7 +68,7 @@ const HeroSlider = () => {
   };
 
   return (
-    <section className={`relative min-h-[88vh] flex items-center overflow-hidden bg-gradient-to-br ${slide.bg} transition-all duration-700`}>
+    <section className={`relative min-h-[60vh] sm:min-h-[75vh] md:min-h-[88vh] flex items-center overflow-hidden bg-gradient-to-br ${slide.bg} transition-all duration-700`}>
       {/* Decorative blobs */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-black/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3 pointer-events-none" />
@@ -82,7 +82,7 @@ const HeroSlider = () => {
           animate="center"
           exit="exit"
           transition={{ duration: 0.55, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="page-container relative z-10 py-24 w-full"
+          className="page-container relative z-10 py-12 sm:py-20 md:py-24 w-full"
         >
           <div className="max-w-3xl">
             {/* Badge */}
@@ -93,10 +93,9 @@ const HeroSlider = () => {
               {slide.badge}
             </motion.span>
 
-            {/* Heading */}
             <motion.h1
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-              className="text-5xl md:text-7xl font-display font-black text-white mb-4 leading-[1.05] tracking-tight"
+              className="text-3xl sm:text-5xl md:text-7xl font-display font-black text-white mb-4 leading-[1.05] tracking-tight"
             >
               {slide.heading}{' '}
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-green-300 to-lime-300">

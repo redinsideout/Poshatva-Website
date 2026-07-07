@@ -6,7 +6,11 @@
 
 @layer base {
   * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
+  html, body {
+    scroll-behavior: smooth;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
   body {
     @apply font-sans text-gray-800 bg-white antialiased;
     margin: 0;

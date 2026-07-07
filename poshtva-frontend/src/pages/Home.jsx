@@ -61,7 +61,7 @@ const Home = () => {
   }
 
   return (
-    <div className="pt-28 md:pt-32 pb-16 md:pb-0 bg-white">
+    <div className="pt-20 md:pt-32 pb-16 md:pb-0 bg-white">
       {/* 1. Hero Auto Slider */}
       <HeroSlider />
 
