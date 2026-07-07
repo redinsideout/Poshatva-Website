@@ -28,11 +28,14 @@ import AdminOrders      from './pages/admin/AdminOrders';
 import AdminOrderDetail from './pages/admin/AdminOrderDetail';
 import AdminUsers       from './pages/admin/AdminUsers';
 
+import MobileBottomNav from './components/MobileBottomNav';
+
 const MainLayout = ({ children }) => (
   <>
     <Navbar />
     <main>{children}</main>
     <Footer />
+    <MobileBottomNav />
   </>
 );
 
