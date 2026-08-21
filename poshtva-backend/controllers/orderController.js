@@ -2,6 +2,7 @@ const asyncHandler = require('express-async-handler');
 const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const sendEmail = require('../utils/sendEmail');
+const shiprocketService = require('../services/shiprocketService');
 
 // @desc  Create order
 const createOrder = asyncHandler(async (req, res) => {
@@ -53,6 +54,9 @@ const createOrder = asyncHandler(async (req, res) => {
       .catch((err) => {
         console.error('[EMAIL] Failed to populate order for COD notification:', err.message);
       });
+
+    // Auto-push COD order to Shiprocket for fulfillment
+    pushToShiprocketAsync(order._id);
   }
 
   res.status(201).json({ success: true, order });
@@ -106,6 +110,9 @@ const markOrderAsPaid = asyncHandler(async (req, res) => {
   // Trigger email notifications asynchronously
   triggerOrderEmailNotifications(order);
 
+  // Auto-push to Shiprocket for fulfillment after payment
+  pushToShiprocketAsync(order._id);
+
   res.json({ success: true, order });
 });
 
@@ -136,6 +143,17 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     order.isDelivered = true;
     order.deliveredAt = new Date();
   }
+
+  // If cancelling and order was pushed to Shiprocket, cancel there too
+  if (orderStatus === 'cancelled' && order.shiprocket && order.shiprocket.orderId) {
+    try {
+      await shiprocketService.cancelOrder([order.shiprocket.orderId]);
+      console.log(`[SHIPROCKET] Cancelled SR order ${order.shiprocket.orderId} for order ${order._id}`);
+    } catch (srErr) {
+      console.error(`[SHIPROCKET] Failed to cancel order on Shiprocket:`, srErr.response?.data || srErr.message);
+    }
+  }
+
   await order.save();
   res.json({ success: true, order });
 });
@@ -358,6 +376,44 @@ function generateAdminEmailHTML(order) {
       </div>
     </div>
   `;
+}
+
+/**
+ * Push an order to Shiprocket asynchronously (fire-and-forget).
+ * Failures are logged but never block the main order flow.
+ */
+function pushToShiprocketAsync(orderId) {
+  Order.findById(orderId)
+    .then(async (freshOrder) => {
+      if (!freshOrder) return;
+      // Skip if already pushed
+      if (freshOrder.shiprocket && freshOrder.shiprocket.orderId) {
+        console.log(`[SHIPROCKET] Order ${orderId} already pushed, skipping`);
+        return;
+      }
+      try {
+        const result = await shiprocketService.fulfillOrder(freshOrder);
+        freshOrder.shiprocket = {
+          orderId: result.shiprocketOrderId,
+          shipmentId: result.shipmentId,
+          awbCode: result.awbCode,
+          courierName: result.courierName,
+          labelUrl: result.labelUrl,
+          status: 'NEW',
+          pushedAt: new Date(),
+        };
+        if (result.awbCode) {
+          freshOrder.trackingId = result.awbCode;
+        }
+        await freshOrder.save();
+        console.log(`[SHIPROCKET] Order ${orderId} auto-pushed successfully`);
+      } catch (srErr) {
+        console.error(`[SHIPROCKET] Auto-push failed for order ${orderId}:`, srErr.response?.data || srErr.message);
+      }
+    })
+    .catch((err) => {
+      console.error(`[SHIPROCKET] Failed to load order ${orderId} for auto-push:`, err.message);
+    });
 }
 
 module.exports = { createOrder, getMyOrders, getOrderById, markOrderAsPaid, getAllOrders, updateOrderStatus };

@@ -47,6 +47,16 @@ const orderSchema = new mongoose.Schema(
       default: 'pending',
     },
     trackingId: { type: String, default: '' },
+    shiprocket: {
+      orderId: { type: Number },
+      shipmentId: { type: Number },
+      awbCode: { type: String },
+      courierName: { type: String },
+      labelUrl: { type: String },
+      status: { type: String },
+      pushedAt: { type: Date },
+      lastTrackedAt: { type: Date },
+    },
     orderNotes: { type: String, default: '' },
   },
   { timestamps: true }

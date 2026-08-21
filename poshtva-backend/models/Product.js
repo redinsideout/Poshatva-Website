@@ -22,6 +22,12 @@ const productSchema = new mongoose.Schema(
     stock: { type: Number, required: true, default: 0 },
     images: [{ type: String }],
     weight: { type: String, default: '' },
+    weightInKg: { type: Number, default: 0.5 },
+    dimensions: {
+      length: { type: Number, default: 10 },
+      breadth: { type: Number, default: 10 },
+      height: { type: Number, default: 10 },
+    },
     unit: { type: String, default: 'kg' },
     tags: [{ type: String }],
     isFeatured: { type: Boolean, default: false },

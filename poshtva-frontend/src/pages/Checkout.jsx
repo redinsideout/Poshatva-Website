@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { ordersAPI, paymentAPI, authAPI } from '../api/index';
+import { ordersAPI, paymentAPI, authAPI, shiprocketAPI } from '../api/index';
 import toast from 'react-hot-toast';
 import { FiMapPin, FiCreditCard, FiLock, FiCheck, FiPlus, FiHome, FiBriefcase } from 'react-icons/fi';
 import { getImageUrl } from '../utils/imageHelper';
@@ -22,6 +22,8 @@ const Checkout = () => {
     fullName: user?.name || '', email: user?.email || '', phone: '', street: '', city: '', state: '', pincode: '', label: 'Home'
   });
   const [pincodeLoading, setPincodeLoading] = useState(false);
+  const [serviceability, setServiceability] = useState(null); // { available, etd, courier }
+  const [serviceabilityLoading, setServiceabilityLoading] = useState(false);
 
   const { subtotal = 0, tax = 0, shipping = 0, total = 0 } = state || {};
   const codCharge = paymentMethod === 'cod' ? 59 : 0;
@@ -100,6 +102,35 @@ const Checkout = () => {
         }
       };
       fetchLocation();
+
+      // Check Shiprocket serviceability
+      const checkServiceability = async () => {
+        setServiceabilityLoading(true);
+        setServiceability(null);
+        try {
+          const data = await shiprocketAPI.checkServiceability({ pincode: form.pincode, cod: paymentMethod === 'cod' ? '1' : '0' });
+          const couriers = data?.serviceability?.data?.available_courier_companies;
+          if (couriers && couriers.length > 0) {
+            // Pick the one with best ETD
+            const best = couriers.reduce((a, b) => (a.estimated_delivery_days < b.estimated_delivery_days ? a : b));
+            setServiceability({
+              available: true,
+              etd: best.estimated_delivery_days || best.etd,
+              courier: best.courier_name,
+              count: couriers.length,
+            });
+          } else {
+            setServiceability({ available: false });
+          }
+        } catch (err) {
+          console.error('Serviceability check error:', err);
+          // Don't block checkout if serviceability check fails
+          setServiceability(null);
+        } finally {
+          setServiceabilityLoading(false);
+        }
+      };
+      checkServiceability();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.pincode, selectedAddressId]);
@@ -295,6 +326,22 @@ const Checkout = () => {
                           )}
                         </div>
                         <input name={name} type={type} value={form[name]} onChange={handleChange} required placeholder={placeholder} className="input-field" />
+                        {name === 'pincode' && form.pincode?.length === 6 && (
+                          <div className="mt-1.5">
+                            {serviceabilityLoading && (
+                              <span className="text-[11px] text-gray-400 font-medium animate-pulse">Checking delivery availability...</span>
+                            )}
+                            {!serviceabilityLoading && serviceability?.available && (
+                              <span className="text-[11px] text-green-600 font-semibold flex items-center gap-1">
+                                <FiCheck className="text-[10px]" /> Delivery available
+                                {serviceability.etd && <span className="text-gray-500 font-normal"> · Est. {serviceability.etd} days</span>}
+                              </span>
+                            )}
+                            {!serviceabilityLoading && serviceability && !serviceability.available && (
+                              <span className="text-[11px] text-red-500 font-semibold">⚠ Delivery not available for this pincode</span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

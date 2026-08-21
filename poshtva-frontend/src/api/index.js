@@ -26,6 +26,15 @@ export const adminAPI = {
   getUsers:     () => api.get('/admin/users'),
 };
 
+export const shiprocketAPI = {
+  pushOrder:      (orderId) => api.post(`/shiprocket/push/${orderId}`),
+  trackOrder:     (orderId) => api.get(`/shiprocket/track/${orderId}`),
+  generateLabel:  (orderId) => api.post(`/shiprocket/label/${orderId}`),
+  schedulePickup: (orderId) => api.post(`/shiprocket/pickup/${orderId}`),
+  retryAssignAWB: (orderId) => api.post(`/shiprocket/assign-awb/${orderId}`),
+  checkServiceability: (params) => api.get('/shiprocket/serviceability', { params }),
+};
+
 export const uploadAPI = {
   // Do NOT manually set Content-Type here — axios auto-detects FormData
   // and sets 'multipart/form-data; boundary=...' which multer requires.

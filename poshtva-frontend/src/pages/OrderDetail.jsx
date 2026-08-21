@@ -65,7 +65,30 @@ const OrderDetail = () => {
                 );
               })}
             </div>
-            {order.trackingId && <p className="text-sm text-gray-500 mt-4">Tracking ID: <span className="font-mono font-semibold text-gray-800">{order.trackingId}</span></p>}
+
+            {/* Shiprocket shipment details */}
+            <div className="mt-5 space-y-2">
+              {order.trackingId && (
+                <p className="text-sm text-gray-500">
+                  Tracking ID: <span className="font-mono font-semibold text-gray-800">{order.trackingId}</span>
+                </p>
+              )}
+              {order.shiprocket?.courierName && (
+                <p className="text-sm text-gray-500">
+                  Courier: <span className="font-semibold text-gray-800">{order.shiprocket.courierName}</span>
+                </p>
+              )}
+              {order.shiprocket?.awbCode && (
+                <a
+                  href={`https://shiprocket.co/tracking/${order.shiprocket.awbCode}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 mt-2 px-4 py-2 bg-forest-50 text-forest-700 text-sm font-semibold rounded-xl hover:bg-forest-100 transition-colors"
+                >
+                  <FiTruck /> Track Shipment
+                </a>
+              )}
+            </div>
           </div>
         )}
 

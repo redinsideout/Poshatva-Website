@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import AdminLayout from '../../components/AdminLayout';
-import { ordersAPI } from '../../api/index';
+import { ordersAPI, shiprocketAPI } from '../../api/index';
 import { PageLoader } from '../../components/LoadingSpinner';
 import OrderStatusBadge from '../../components/OrderStatusBadge';
 import toast from 'react-hot-toast';
-import { FiArrowLeft, FiSave, FiMapPin } from 'react-icons/fi';
+import { FiArrowLeft, FiSave, FiMapPin, FiTruck, FiPackage, FiDownload, FiRefreshCw, FiSend, FiExternalLink } from 'react-icons/fi';
 
 import { getImageUrl } from '../../utils/imageHelper';
 const STATUS_OPTIONS = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
@@ -17,6 +17,14 @@ const AdminOrderDetail = () => {
   const [newStatus, setNewStatus] = useState('');
   const [trackingId, setTrackingId] = useState('');
   const [saving, setSaving]     = useState(false);
+
+  // Shiprocket states
+  const [srPushing, setSrPushing]     = useState(false);
+  const [srTracking, setSrTracking]   = useState(false);
+  const [srLabeling, setSrLabeling]   = useState(false);
+  const [srPickup, setSrPickup]       = useState(false);
+  const [srAwbRetry, setSrAwbRetry]   = useState(false);
+  const [trackingData, setTrackingData] = useState(null);
 
   useEffect(() => {
     ordersAPI.getById(id)
@@ -36,8 +44,77 @@ const AdminOrderDetail = () => {
     } finally { setSaving(false); }
   };
 
+  // ── Shiprocket Actions ──────────────────────────────────
+
+  const handlePushToShiprocket = async () => {
+    setSrPushing(true);
+    try {
+      const data = await shiprocketAPI.pushOrder(id);
+      setOrder(data.order);
+      setTrackingId(data.order.trackingId || '');
+      toast.success('Order pushed to Shiprocket!');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to push to Shiprocket');
+    } finally { setSrPushing(false); }
+  };
+
+  const handleTrackShipment = async () => {
+    setSrTracking(true);
+    setTrackingData(null);
+    try {
+      const data = await shiprocketAPI.trackOrder(id);
+      setTrackingData(data.tracking);
+      toast.success('Tracking data fetched!');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to fetch tracking');
+    } finally { setSrTracking(false); }
+  };
+
+  const handleGenerateLabel = async () => {
+    setSrLabeling(true);
+    try {
+      const data = await shiprocketAPI.generateLabel(id);
+      if (data.labelUrl) {
+        window.open(data.labelUrl, '_blank');
+        // Refresh order to get updated labelUrl
+        const refreshed = await ordersAPI.getById(id);
+        setOrder(refreshed.order);
+        toast.success('Label generated!');
+      } else {
+        toast.error('No label URL returned');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to generate label');
+    } finally { setSrLabeling(false); }
+  };
+
+  const handleSchedulePickup = async () => {
+    setSrPickup(true);
+    try {
+      await shiprocketAPI.schedulePickup(id);
+      toast.success('Pickup scheduled!');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to schedule pickup');
+    } finally { setSrPickup(false); }
+  };
+
+  const handleRetryAWB = async () => {
+    setSrAwbRetry(true);
+    try {
+      const data = await shiprocketAPI.retryAssignAWB(id);
+      setOrder(data.order);
+      setTrackingId(data.order.trackingId || '');
+      toast.success(`AWB assigned: ${data.awbCode}`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to assign AWB');
+    } finally { setSrAwbRetry(false); }
+  };
+
   if (loading) return <AdminLayout><PageLoader /></AdminLayout>;
   if (!order) return <AdminLayout><p className="text-gray-500">Order not found</p></AdminLayout>;
+
+  const sr = order.shiprocket || {};
+  const hasSR = !!sr.orderId;
 
   return (
     <AdminLayout>
@@ -89,6 +166,92 @@ const AdminOrderDetail = () => {
                 <p className="text-sm text-gray-500">{order.shippingAddress?.phone}</p>
                 <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-bold mt-2 inline-block">Guest Checkout</span>
               </>
+            )}
+          </div>
+
+          {/* ── Shiprocket Section ─────────────────────────── */}
+          <div className="card p-6">
+            <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <FiTruck className="text-blue-500" /> Shiprocket Fulfillment
+            </h3>
+
+            {!hasSR ? (
+              /* Not yet pushed */
+              <div className="text-center py-4">
+                <p className="text-sm text-gray-500 mb-4">This order has not been pushed to Shiprocket yet.</p>
+                <button
+                  onClick={handlePushToShiprocket}
+                  disabled={srPushing}
+                  className="btn-primary text-sm py-2.5 px-6 inline-flex items-center gap-2"
+                >
+                  <FiSend /> {srPushing ? 'Pushing...' : 'Push to Shiprocket'}
+                </button>
+              </div>
+            ) : (
+              /* Shiprocket details */
+              <div className="space-y-4">
+                {/* Status grid */}
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="bg-gray-50 p-3 rounded-xl">
+                    <p className="text-gray-500 text-xs mb-1">Shiprocket Order</p>
+                    <p className="font-bold text-gray-800">#{sr.orderId}</p>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-xl">
+                    <p className="text-gray-500 text-xs mb-1">Shipment ID</p>
+                    <p className="font-bold text-gray-800">{sr.shipmentId || '—'}</p>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-xl">
+                    <p className="text-gray-500 text-xs mb-1">AWB Code</p>
+                    <p className="font-bold text-gray-800 font-mono">{sr.awbCode || '—'}</p>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-xl">
+                    <p className="text-gray-500 text-xs mb-1">Courier</p>
+                    <p className="font-bold text-gray-800">{sr.courierName || '—'}</p>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-xl col-span-2">
+                    <p className="text-gray-500 text-xs mb-1">Shiprocket Status</p>
+                    <p className="font-bold text-blue-600">{sr.status || '—'}</p>
+                    {sr.pushedAt && <p className="text-xs text-gray-400 mt-1">Pushed: {new Date(sr.pushedAt).toLocaleString('en-IN')}</p>}
+                  </div>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {!sr.awbCode && (
+                    <button onClick={handleRetryAWB} disabled={srAwbRetry} className="btn-outline text-xs py-2 px-3 inline-flex items-center gap-1.5">
+                      <FiRefreshCw className={srAwbRetry ? 'animate-spin' : ''} /> {srAwbRetry ? 'Assigning...' : 'Assign AWB'}
+                    </button>
+                  )}
+                  {sr.awbCode && (
+                    <>
+                      <button onClick={handleTrackShipment} disabled={srTracking} className="btn-outline text-xs py-2 px-3 inline-flex items-center gap-1.5">
+                        <FiPackage className={srTracking ? 'animate-spin' : ''} /> {srTracking ? 'Loading...' : 'Track'}
+                      </button>
+                      <button onClick={handleGenerateLabel} disabled={srLabeling} className="btn-outline text-xs py-2 px-3 inline-flex items-center gap-1.5">
+                        <FiDownload /> {srLabeling ? 'Loading...' : 'Label'}
+                      </button>
+                      <button onClick={handleSchedulePickup} disabled={srPickup} className="btn-outline text-xs py-2 px-3 inline-flex items-center gap-1.5">
+                        <FiTruck /> {srPickup ? 'Scheduling...' : 'Pickup'}
+                      </button>
+                    </>
+                  )}
+                  {sr.labelUrl && (
+                    <a href={sr.labelUrl} target="_blank" rel="noreferrer" className="btn-outline text-xs py-2 px-3 inline-flex items-center gap-1.5 text-blue-600">
+                      <FiExternalLink /> View Label
+                    </a>
+                  )}
+                </div>
+
+                {/* Tracking data */}
+                {trackingData && (
+                  <div className="mt-4 p-4 bg-blue-50 rounded-xl text-sm max-h-60 overflow-y-auto">
+                    <h4 className="font-semibold text-blue-800 mb-2">Live Tracking</h4>
+                    <pre className="text-xs text-blue-900 whitespace-pre-wrap break-words">
+                      {JSON.stringify(trackingData, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
