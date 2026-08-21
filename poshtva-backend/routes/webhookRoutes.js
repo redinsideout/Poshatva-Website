@@ -3,6 +3,6 @@ const router = express.Router();
 const { handleShiprocketWebhook } = require('../controllers/webhookController');
 
 // Public endpoint — no auth required (Shiprocket needs to call this)
-router.post('/shiprocket', handleShiprocketWebhook);
+router.post('/tracking-update', handleShiprocketWebhook);
 
 module.exports = router;

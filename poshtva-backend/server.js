@@ -51,6 +51,7 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/shiprocket', require('./routes/shiprocketRoutes'));
 app.use('/api/webhooks', require('./routes/webhookRoutes'));
+app.use('/api/hooks', require('./routes/webhookRoutes'));
 
 // Error handling
 app.use(notFound);
