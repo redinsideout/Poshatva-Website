@@ -154,9 +154,7 @@ async function createOrder(order) {
 
 /**
  * Assign courier (auto-assign or admin selected courier) and get AWB.
- * @param {Number|String} shipmentId - Shiprocket shipment ID
- * @param {Number|String} [courierId] - Optional specific courier ID
- * @returns {Object} { awb_assign_status, response { data: { awb_code, courier_name, ... } } }
+ * Diagnostic logging enabled — prints complete Shiprocket response.
  */
 async function assignAWB(shipmentId, courierId = null) {
   const parsedShipmentId = Number(shipmentId) || shipmentId;
@@ -166,29 +164,40 @@ async function assignAWB(shipmentId, courierId = null) {
     payload.courier_id = Number(courierId) || courierId;
   }
 
-  console.log('[SHIPROCKET AWB REQUEST]');
-  console.log('endpoint: POST https://apiv2.shiprocket.in/v1/external/courier/assign/awb');
-  console.log('shipment_id:', parsedShipmentId);
-  console.log('courier_id:', payload.courier_id || 'Not specified (auto-assign)');
-  console.log('payload:', JSON.stringify(payload));
+  console.log("[SHIPROCKET AWB REQUEST]", {
+    shipment_id: payload.shipment_id,
+    courier_id: payload.courier_id || null,
+    payload: payload
+  });
+
+  const token = await getToken();
+  const axiosConfig = {
+    method: 'POST',
+    url: `${SHIPROCKET_BASE_URL}/courier/assign/awb`,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    data: payload,
+    timeout: 30000,
+  };
 
   try {
-    const result = await apiRequest('POST', '/courier/assign/awb', payload);
+    const response = await axios(axiosConfig);
 
-    console.log('[SHIPROCKET AWB SUCCESS RESPONSE]');
-    console.log('status: 200');
-    console.log('response:', JSON.stringify(result, null, 2));
+    console.log("[SHIPROCKET AWB RAW RESPONSE]", {
+      status: response.status,
+      data: response.data
+    });
 
-    return result;
-  } catch (err) {
-    const status = err.response?.status || 'Unknown Status';
-    const responseData = err.response?.data || err.message;
-
-    console.error('[SHIPROCKET AWB ERROR]');
-    console.error('status:', status);
-    console.error('response:', typeof responseData === 'object' ? JSON.stringify(responseData, null, 2) : responseData);
-
-    throw err;
+    return response.data;
+  } catch (error) {
+    console.error("[SHIPROCKET AWB RAW ERROR]", {
+      status: error.response?.status,
+      data: error.response?.data,
+      headers: error.response?.headers
+    });
+    throw error;
   }
 }
 
