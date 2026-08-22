@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiTrash2, FiPlus, FiMinus, FiShoppingBag, FiArrowRight } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getImageUrl } from '../utils/imageHelper';
-import AuthModal from '../components/AuthModal';
 
 const TAX_RATE = 0.05;
 const FREE_SHIPPING_THRESHOLD = 499;
@@ -13,7 +11,6 @@ const SHIPPING_COST = 0;
 
 const Cart = () => {
   const { cart, cartLoading, updateQuantity, removeFromCart } = useCart();
-  const { user } = useAuth();
   const navigate  = useNavigate();
 
   const items    = cart.items || [];
