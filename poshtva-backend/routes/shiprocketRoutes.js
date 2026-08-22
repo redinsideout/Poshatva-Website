@@ -2,22 +2,30 @@ const express = require('express');
 const router = express.Router();
 const {
   pushOrderToShiprocket,
-  trackOrder,
-  generateLabel,
+  getAvailableCouriers,
+  assignAWB,
   schedulePickup,
+  generateLabel,
+  generateManifest,
+  printManifest,
+  cancelShipment,
+  trackOrder,
   checkServiceability,
-  retryAssignAWB,
 } = require('../controllers/shiprocketController');
-const { protect, adminOnly, protectOptional } = require('../middleware/authMiddleware');
+const { protect, adminOnly } = require('../middleware/authMiddleware');
 
-// Admin-only routes
+// Admin-only Shiprocket routes
 router.post('/push/:orderId', protect, adminOnly, pushOrderToShiprocket);
-router.get('/track/:orderId', protect, adminOnly, trackOrder);
-router.post('/label/:orderId', protect, adminOnly, generateLabel);
+router.get('/couriers/:orderId', protect, adminOnly, getAvailableCouriers);
+router.post('/assign-awb/:orderId', protect, adminOnly, assignAWB);
 router.post('/pickup/:orderId', protect, adminOnly, schedulePickup);
-router.post('/assign-awb/:orderId', protect, adminOnly, retryAssignAWB);
+router.post('/label/:orderId', protect, adminOnly, generateLabel);
+router.post('/manifest/generate/:orderId', protect, adminOnly, generateManifest);
+router.post('/manifest/print/:orderId', protect, adminOnly, printManifest);
+router.post('/cancel/:orderId', protect, adminOnly, cancelShipment);
+router.get('/track/:orderId', protect, adminOnly, trackOrder);
 
-// Public — pincode serviceability (used on checkout page)
+// Public — pincode serviceability check (used on checkout page)
 router.get('/serviceability', checkServiceability);
 
 module.exports = router;

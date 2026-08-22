@@ -28,10 +28,14 @@ export const adminAPI = {
 
 export const shiprocketAPI = {
   pushOrder:      (orderId) => api.post(`/shiprocket/push/${orderId}`),
-  trackOrder:     (orderId) => api.get(`/shiprocket/track/${orderId}`),
-  generateLabel:  (orderId) => api.post(`/shiprocket/label/${orderId}`),
+  getCouriers:    (orderId) => api.get(`/shiprocket/couriers/${orderId}`),
+  assignAWB:      (orderId, data) => api.post(`/shiprocket/assign-awb/${orderId}`, data),
   schedulePickup: (orderId) => api.post(`/shiprocket/pickup/${orderId}`),
-  retryAssignAWB: (orderId) => api.post(`/shiprocket/assign-awb/${orderId}`),
+  generateLabel:  (orderId) => api.post(`/shiprocket/label/${orderId}`),
+  generateManifest:(orderId) => api.post(`/shiprocket/manifest/generate/${orderId}`),
+  printManifest:  (orderId) => api.post(`/shiprocket/manifest/print/${orderId}`),
+  cancelShipment: (orderId) => api.post(`/shiprocket/cancel/${orderId}`),
+  trackOrder:     (orderId) => api.get(`/shiprocket/track/${orderId}`),
   checkServiceability: (params) => api.get('/shiprocket/serviceability', { params }),
 };
 

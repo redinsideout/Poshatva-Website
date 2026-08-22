@@ -147,15 +147,20 @@ async function createOrder(order) {
 
 // ── Assign AWB (Auto-assign recommended courier) ────────
 
+// ── Assign AWB ─────────────────────────────────────────
+
 /**
- * Auto-assign the best courier (cheapest + fastest) and get AWB.
- * @param {Number} shipmentId - Shiprocket shipment ID
+ * Assign courier (auto-assign or admin selected courier) and get AWB.
+ * @param {Number|String} shipmentId - Shiprocket shipment ID
+ * @param {Number|String} [courierId] - Optional specific courier ID
  * @returns {Object} { awb_assign_status, response { data: { awb_code, courier_name, ... } } }
  */
-async function assignAWB(shipmentId) {
-  const result = await apiRequest('POST', '/courier/assign/awb', {
-    shipment_id: shipmentId,
-  });
+async function assignAWB(shipmentId, courierId = null) {
+  const payload = { shipment_id: shipmentId };
+  if (courierId) {
+    payload.courier_id = courierId;
+  }
+  const result = await apiRequest('POST', '/courier/assign/awb', payload);
   console.log(`[SHIPROCKET] AWB assigned for shipment ${shipmentId}:`, result?.response?.data?.awb_code || 'pending');
   return result;
 }
@@ -173,6 +178,36 @@ async function generateLabel(shipmentIds) {
     shipment_id: ids,
   });
   console.log(`[SHIPROCKET] Label generated for shipments: ${ids.join(', ')}`);
+  return result;
+}
+
+// ── Manifest Management ──────────────────────────────────
+
+/**
+ * Generate manifest for shipment(s).
+ * @param {Number|Array} shipmentIds
+ * @returns {Object} { status, manifest_url, ... }
+ */
+async function generateManifest(shipmentIds) {
+  const ids = Array.isArray(shipmentIds) ? shipmentIds : [shipmentIds];
+  const result = await apiRequest('POST', '/manifests/generate', {
+    shipment_id: ids,
+  });
+  console.log(`[SHIPROCKET] Manifest generated for shipments: ${ids.join(', ')}`);
+  return result;
+}
+
+/**
+ * Print / download manifest for order(s).
+ * @param {Number|Array} orderIds - Shiprocket order IDs
+ * @returns {Object} { manifest_url, ... }
+ */
+async function printManifest(orderIds) {
+  const ids = Array.isArray(orderIds) ? orderIds : [orderIds];
+  const result = await apiRequest('POST', '/manifests/print', {
+    order_ids: ids,
+  });
+  console.log(`[SHIPROCKET] Manifest print URL generated for orders: ${ids.join(', ')}`);
   return result;
 }
 
@@ -228,7 +263,7 @@ async function cancelOrder(orderIds) {
   return result;
 }
 
-// ── Check Serviceability ─────────────────────────────────
+// ── Check Serviceability & Couriers ──────────────────────
 
 /**
  * Check if delivery is available for a pincode and get estimated delivery dates.
@@ -317,6 +352,8 @@ module.exports = {
   createOrder,
   assignAWB,
   generateLabel,
+  generateManifest,
+  printManifest,
   schedulePickup,
   trackByAWB,
   trackByOrderId,
