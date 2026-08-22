@@ -159,13 +159,41 @@ async function createOrder(order) {
  * @returns {Object} { awb_assign_status, response { data: { awb_code, courier_name, ... } } }
  */
 async function assignAWB(shipmentId, courierId = null) {
-  const payload = { shipment_id: shipmentId };
-  if (courierId) {
-    payload.courier_id = courierId;
+  const parsedShipmentId = Number(shipmentId) || shipmentId;
+  const payload = { shipment_id: parsedShipmentId };
+  
+  if (courierId !== null && courierId !== undefined && courierId !== '') {
+    payload.courier_id = Number(courierId) || courierId;
   }
-  const result = await apiRequest('POST', '/courier/assign/awb', payload);
-  console.log(`[SHIPROCKET] AWB assigned for shipment ${shipmentId}:`, result?.response?.data?.awb_code || 'pending');
-  return result;
+
+  console.log('[SHIPROCKET] AWB Assignment Request:', {
+    endpoint: '/courier/assign/awb',
+    payload: JSON.stringify(payload),
+  });
+
+  try {
+    const result = await apiRequest('POST', '/courier/assign/awb', payload);
+
+    console.log('[SHIPROCKET] AWB Assignment Response:', {
+      shipment_id: parsedShipmentId,
+      courier_id: payload.courier_id || 'Auto-assign',
+      awb_assign_status: result?.awb_assign_status,
+      awb_code: result?.response?.data?.awb_code || result?.awb_code || null,
+      courier_name: result?.response?.data?.courier_name || result?.courier_name || null,
+      full_response: JSON.stringify(result, null, 2),
+    });
+
+    return result;
+  } catch (err) {
+    console.error('[SHIPROCKET] AWB Assignment HTTP Error:', {
+      shipment_id: parsedShipmentId,
+      courier_id: payload.courier_id || 'Auto-assign',
+      status: err.response?.status,
+      statusText: err.response?.statusText,
+      data: JSON.stringify(err.response?.data || err.message, null, 2),
+    });
+    throw err;
+  }
 }
 
 // ── Generate Shipping Label ──────────────────────────────
