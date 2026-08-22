@@ -146,8 +146,8 @@ const AdminProductForm = () => {
       discountPrice:Number(form.discountPrice) || 0,
       stock:        Number(form.stock),
       variants:     formattedVariants,
-      tags:         form.tags.split(',').map((t) => t.trim()).filter(Boolean),
-      benefits:     form.benefits.split('\n').map((b) => b.trim()).filter(Boolean),
+      tags:         typeof form.tags === 'string' ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : (Array.isArray(form.tags) ? form.tags : []),
+      benefits:     typeof form.benefits === 'string' ? form.benefits.split('\n').map((b) => b.trim()).filter(Boolean) : (Array.isArray(form.benefits) ? form.benefits : []),
     };
 
     try {

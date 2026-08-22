@@ -63,6 +63,29 @@ const getProductById = asyncHandler(async (req, res) => {
   res.json({ success: true, product });
 });
 
+const mongoose = require('mongoose');
+
+const sanitizeVariants = (variantsArray) => {
+  if (!Array.isArray(variantsArray)) return [];
+  return variantsArray.map((v) => {
+    const clean = {
+      name: String(v.name || 'Variant').trim(),
+      value: Number(v.value) || 1,
+      unit: String(v.unit || 'kg').trim(),
+      price: Number(v.price) || 0,
+      discountPrice: Number(v.discountPrice) || 0,
+      stock: Number(v.stock) || 0,
+      weightInKg: Number(v.weightInKg) || 0.5,
+      sku: String(v.sku || '').trim(),
+      isActive: v.isActive !== false,
+    };
+    if (v._id && mongoose.Types.ObjectId.isValid(v._id) && String(v._id).length === 24) {
+      clean._id = v._id;
+    }
+    return clean;
+  });
+};
+
 // @desc  Create product (admin)
 const createProduct = asyncHandler(async (req, res) => {
   const { name, slug, description, richDescription, category, price, discountPrice, stock, variants, images, weight, unit, tags, isFeatured, benefits, howToUse } = req.body;
@@ -71,7 +94,12 @@ const createProduct = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error('Product with this slug already exists');
   }
-  const product = await Product.create({ name, slug, description, richDescription, category, price, discountPrice, stock, variants: variants || [], images, weight, unit, tags, isFeatured, benefits, howToUse });
+  const cleanVariants = sanitizeVariants(variants);
+  const product = await Product.create({
+    name, slug, description, richDescription, category, price, discountPrice, stock,
+    variants: cleanVariants,
+    images, weight, unit, tags, isFeatured, benefits, howToUse
+  });
   res.status(201).json({ success: true, product });
 });
 
@@ -81,6 +109,9 @@ const updateProduct = asyncHandler(async (req, res) => {
   if (!product) {
     res.status(404);
     throw new Error('Product not found');
+  }
+  if (req.body.variants) {
+    req.body.variants = sanitizeVariants(req.body.variants);
   }
   const updated = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
   res.json({ success: true, product: updated });
