@@ -146,9 +146,11 @@ const assignAWB = asyncHandler(async (req, res) => {
         awbResult?.response?.data?.message ||
         awbResult?.message ||
         (typeof awbResult?.response?.data === 'string' ? awbResult.response.data : null) ||
-        'Shiprocket was unable to assign an AWB code for this shipment/courier combination.';
+        `Shiprocket AWB Assignment Failed: ${JSON.stringify(awbResult)}`;
 
-      console.error(`[SHIPROCKET] AWB Assignment Failed for Shipment ${shipmentId}: ${detailedError}`);
+      console.error('[SHIPROCKET AWB REJECTED RESPONSE]');
+      console.error('response:', JSON.stringify(awbResult, null, 2));
+
       res.status(400);
       throw new Error(detailedError);
     }

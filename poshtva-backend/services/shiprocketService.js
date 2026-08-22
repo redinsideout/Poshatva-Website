@@ -166,32 +166,28 @@ async function assignAWB(shipmentId, courierId = null) {
     payload.courier_id = Number(courierId) || courierId;
   }
 
-  console.log('[SHIPROCKET] AWB Assignment Request:', {
-    endpoint: '/courier/assign/awb',
-    payload: JSON.stringify(payload),
-  });
+  console.log('[SHIPROCKET AWB REQUEST]');
+  console.log('endpoint: POST https://apiv2.shiprocket.in/v1/external/courier/assign/awb');
+  console.log('shipment_id:', parsedShipmentId);
+  console.log('courier_id:', payload.courier_id || 'Not specified (auto-assign)');
+  console.log('payload:', JSON.stringify(payload));
 
   try {
     const result = await apiRequest('POST', '/courier/assign/awb', payload);
 
-    console.log('[SHIPROCKET] AWB Assignment Response:', {
-      shipment_id: parsedShipmentId,
-      courier_id: payload.courier_id || 'Auto-assign',
-      awb_assign_status: result?.awb_assign_status,
-      awb_code: result?.response?.data?.awb_code || result?.awb_code || null,
-      courier_name: result?.response?.data?.courier_name || result?.courier_name || null,
-      full_response: JSON.stringify(result, null, 2),
-    });
+    console.log('[SHIPROCKET AWB SUCCESS RESPONSE]');
+    console.log('status: 200');
+    console.log('response:', JSON.stringify(result, null, 2));
 
     return result;
   } catch (err) {
-    console.error('[SHIPROCKET] AWB Assignment HTTP Error:', {
-      shipment_id: parsedShipmentId,
-      courier_id: payload.courier_id || 'Auto-assign',
-      status: err.response?.status,
-      statusText: err.response?.statusText,
-      data: JSON.stringify(err.response?.data || err.message, null, 2),
-    });
+    const status = err.response?.status || 'Unknown Status';
+    const responseData = err.response?.data || err.message;
+
+    console.error('[SHIPROCKET AWB ERROR]');
+    console.error('status:', status);
+    console.error('response:', typeof responseData === 'object' ? JSON.stringify(responseData, null, 2) : responseData);
+
     throw err;
   }
 }
