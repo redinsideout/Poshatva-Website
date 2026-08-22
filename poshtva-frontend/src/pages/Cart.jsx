@@ -15,7 +15,6 @@ const Cart = () => {
   const { cart, cartLoading, updateQuantity, removeFromCart } = useCart();
   const { user } = useAuth();
   const navigate  = useNavigate();
-  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const items    = cart.items || [];
   const subtotal = cart.totalAmount || 0;
@@ -24,7 +23,6 @@ const Cart = () => {
   const total    = subtotal + tax + shipping;
 
   const handleCheckout = () => {
-    if (!user) { setShowAuthModal(true); return; }
     navigate('/checkout', { state: { subtotal, tax, shipping, total } });
   };
 
@@ -47,12 +45,6 @@ const Cart = () => {
 
   return (
     <div className="pt-32 min-h-screen bg-gray-50">
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        onSuccess={() => navigate('/checkout', { state: { subtotal, tax, shipping, total } })}
-      />
-
       <div className="page-container py-10">
         <h1 className="section-title mb-8">Shopping Cart <span className="text-forest-400 text-2xl">({items.length} items)</span></h1>
 
@@ -123,7 +115,7 @@ const Cart = () => {
               </div>
               <button onClick={handleCheckout}
                 className="btn-primary w-full mt-6 justify-center py-3.5 text-base">
-                {user ? 'Proceed to Checkout' : '🔐 Login to Checkout'} <FiArrowRight />
+                Proceed to Checkout <FiArrowRight />
               </button>
               <Link to="/products" className="btn-secondary w-full mt-3 justify-center py-3 text-sm">
                 Continue Shopping

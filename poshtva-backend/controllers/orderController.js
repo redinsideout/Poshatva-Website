@@ -15,13 +15,6 @@ const createOrder = asyncHandler(async (req, res) => {
   const isRegistered = !!req.user;
   const userType = isRegistered ? 'Registered' : 'Guest';
 
-  if (paymentMethod === 'cod') {
-    if (!isRegistered) {
-      res.status(400);
-      throw new Error('Cash on Delivery is available only for logged-in customers.');
-    }
-  }
-
   const codCharge = paymentMethod === 'cod' ? 59 : 0;
   const calculatedTotal = Number(itemsPrice) + Number(taxPrice) + Number(shippingPrice) + codCharge;
 

@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { createRazorpayOrder, verifyPayment } = require('../controllers/paymentController');
-const { protect } = require('../middleware/authMiddleware');
+const { protectOptional } = require('../middleware/authMiddleware');
 
-router.post('/create-order', protect, createRazorpayOrder);
-router.post('/verify', protect, verifyPayment);
+router.post('/create-order', protectOptional, createRazorpayOrder);
+router.post('/verify', protectOptional, verifyPayment);
 
 module.exports = router;

@@ -213,7 +213,7 @@ const Checkout = () => {
             toast.error('Payment verification failed');
           }
         },
-        prefill: { name: form.fullName, contact: form.phone, email: user?.email },
+        prefill: { name: form.fullName, contact: form.phone, email: user?.email || form.email || '' },
         theme:   { color: '#2d6a4f' },
         modal:   { ondismiss: () => setLoading(false) },
       };
@@ -242,6 +242,14 @@ const Checkout = () => {
 
           {/* Shipping Form */}
           <div className="lg:col-span-2 space-y-6">
+            {!user && (
+              <div className="card p-4 bg-forest-50/70 border border-forest-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-forest-800">
+                <span>Have an account? Log in to use your saved addresses.</span>
+                <button type="button" onClick={() => setShowAuthModal(true)} className="font-bold underline hover:text-forest-900 self-start sm:self-auto">
+                  Log in (Optional)
+                </button>
+              </div>
+            )}
             <form onSubmit={handleSubmit} id="checkout-form" className="space-y-6">
               
               {/* Saved Addresses Section */}
@@ -387,60 +395,33 @@ const Checkout = () => {
                   </div>
 
                   {/* COD Option */}
-                  {user ? (
-                    <div 
-                      type="button"
-                      onClick={() => setPaymentMethod('cod')}
-                      className={`flex flex-col gap-1 p-4 border-2 rounded-2xl cursor-pointer transition-all ${
-                        paymentMethod === 'cod' 
-                          ? 'border-forest-500 bg-forest-50/50 shadow-sm' 
-                          : 'border-gray-100 hover:border-gray-200 bg-white'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-forest-50 rounded-lg flex items-center justify-center shadow-sm text-lg border border-forest-100">
-                          📦
-                        </div>
-                        <div className="flex-1 text-left">
-                          <p className="font-bold text-gray-800 text-sm">Cash on Delivery (COD)</p>
-                          <p className="text-xs text-gray-500">Pay cash when order is delivered</p>
-                        </div>
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                          paymentMethod === 'cod' ? 'border-forest-500' : 'border-gray-300'
-                        }`}>
-                          {paymentMethod === 'cod' && <div className="w-2.5 h-2.5 rounded-full bg-forest-500" />}
-                        </div>
+                  <div 
+                    type="button"
+                    onClick={() => setPaymentMethod('cod')}
+                    className={`flex flex-col gap-1 p-4 border-2 rounded-2xl cursor-pointer transition-all ${
+                      paymentMethod === 'cod' 
+                        ? 'border-forest-500 bg-forest-50/50 shadow-sm' 
+                        : 'border-gray-100 hover:border-gray-200 bg-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-forest-50 rounded-lg flex items-center justify-center shadow-sm text-lg border border-forest-100">
+                        📦
                       </div>
-                      <div className="mt-2 text-xs text-gray-500 font-medium pl-13 text-left">
-                        Additional COD handling charge: <span className="font-bold text-gray-700">₹59</span>
+                      <div className="flex-1 text-left">
+                        <p className="font-bold text-gray-800 text-sm">Cash on Delivery (COD)</p>
+                        <p className="text-xs text-gray-500">Pay cash when order is delivered</p>
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                        paymentMethod === 'cod' ? 'border-forest-500' : 'border-gray-300'
+                      }`}>
+                        {paymentMethod === 'cod' && <div className="w-2.5 h-2.5 rounded-full bg-forest-500" />}
                       </div>
                     </div>
-                  ) : (
-                    <div className="p-4 border-2 border-gray-100 border-dashed rounded-2xl bg-gray-50/50">
-                      <div className="flex items-center gap-3 opacity-60">
-                        <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center text-lg">
-                          📦
-                        </div>
-                        <div className="flex-1 text-left">
-                          <p className="font-bold text-gray-400 text-sm">Cash on Delivery (COD)</p>
-                          <p className="text-xs text-gray-400">Not available for guest checkout</p>
-                        </div>
-                        <div className="w-5 h-5 rounded-full border-2 border-gray-200" />
-                      </div>
-                      <div className="mt-3 pt-3 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-left">
-                        <p className="text-xs text-amber-700 font-semibold flex items-center gap-1.5">
-                          ⚠️ Cash on Delivery is available only for logged-in customers.
-                        </p>
-                        <button 
-                          type="button"
-                          onClick={() => setShowAuthModal(true)}
-                          className="text-xs font-bold text-forest-700 hover:text-forest-800 flex items-center gap-1 self-start sm:self-auto bg-forest-50 hover:bg-forest-100 px-3.5 py-2 rounded-xl border border-forest-200 shadow-sm transition-all"
-                        >
-                          Login to Enable COD
-                        </button>
-                      </div>
+                    <div className="mt-2 text-xs text-gray-500 font-medium pl-13 text-left">
+                      Additional COD handling charge: <span className="font-bold text-gray-700">₹59</span>
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
 
