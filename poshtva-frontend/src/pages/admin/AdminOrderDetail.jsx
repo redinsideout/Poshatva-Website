@@ -238,7 +238,12 @@ const AdminOrderDetail = () => {
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-gray-800 text-sm">{item.name}</p>
-                      <p className="text-xs text-gray-400">Qty: {item.quantity} × ₹{item.price}</p>
+                      {item.variantName && (
+                        <span className="text-xs bg-forest-50 text-forest-700 px-2 py-0.5 rounded font-bold mt-0.5 inline-block">
+                          Variant: {item.variantName}
+                        </span>
+                      )}
+                      <p className="text-xs text-gray-400 mt-1">Qty: {item.quantity} × ₹{item.price}</p>
                     </div>
                     <p className="font-semibold text-sm">₹{(item.price * item.quantity).toFixed(2)}</p>
                   </div>

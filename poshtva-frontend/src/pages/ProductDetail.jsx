@@ -3,14 +3,13 @@ import { useParams, Link } from 'react-router-dom';
 import { 
   FiStar, FiPlus, FiMinus, FiCheck, 
   FiTruck, FiChevronLeft, FiChevronRight, FiShoppingBag,
-  FiMapPin, FiGift, FiAward, FiInfo, FiChevronDown, FiHelpCircle
+  FiMapPin, FiGift, FiAward, FiInfo, FiHelpCircle
 } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
 import { PageLoader } from '../components/LoadingSpinner';
 import { productsAPI } from '../api/products';
 import { getImageUrl } from '../utils/imageHelper';
 import { motion, AnimatePresence } from 'framer-motion';
-import ComparisonTable from '../components/ComparisonTable';
 import { toast } from 'react-hot-toast';
 
 const ProductDetail = () => {
@@ -23,11 +22,10 @@ const ProductDetail = () => {
   const [selectedImg, setSelectedImg]   = useState(0);
   const [addedToCart, setAddedToCart]   = useState(false);
   
-  // New "Ugaoo" Features State
   const [pincode, setPincode]           = useState('');
   const [deliveryInfo, setDeliveryInfo] = useState(null);
   const [checkingPincode, setCheckingPincode] = useState(false);
-  const [selectedSize, setSelectedSize] = useState('1 KG');
+  const [selectedVariantId, setSelectedVariantId] = useState('');
   const [showSticky, setShowSticky]     = useState(false);
   const [activeTab, setActiveTab]       = useState('desc');
 
@@ -37,6 +35,11 @@ const ProductDetail = () => {
       .then((data) => {
         setProduct(data.product);
         document.title = `${data.product.name} — Poshatva`;
+        // Auto-select first active variant if present
+        const activeVars = data.product.variants?.filter(v => v.isActive !== false) || [];
+        if (activeVars.length > 0) {
+          setSelectedVariantId(activeVars[0]._id);
+        }
       })
       .catch(() => setError('Product not found'))
       .finally(() => setLoading(false));
@@ -46,11 +49,49 @@ const ProductDetail = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [slug]);
 
+  if (loading) return <div className="pt-32"><PageLoader /></div>;
+  if (error || !product) return (
+    <div className="pt-32 min-h-screen flex items-center justify-center bg-white">
+      <div className="text-center">
+        <h2 className="text-4xl font-display font-bold mb-4">Product was replanted...</h2>
+        <p className="text-gray-500 mb-8 text-lg">We couldn't find the page you're looking for.</p>
+        <Link to="/products" className="btn-primary px-8">Return to Shop</Link>
+      </div>
+    </div>
+  );
+
+  const { name, description, price, discountPrice, stock, images, rating, numReviews, category, howToUse, variants = [] } = product;
+  const activeVariants = variants.filter(v => v.isActive !== false);
+  const hasVariants = activeVariants.length > 0;
+
+  // Resolve current active variant or fallback to product root pricing
+  const currentVariant = hasVariants
+    ? (activeVariants.find(v => v._id === selectedVariantId || v._id?.toString() === selectedVariantId) || activeVariants[0])
+    : null;
+
+  const currentPrice = currentVariant
+    ? (currentVariant.discountPrice > 0 ? currentVariant.discountPrice : currentVariant.price)
+    : (discountPrice > 0 ? discountPrice : price);
+
+  const currentMrp = currentVariant ? currentVariant.price : price;
+  const currentStock = currentVariant ? currentVariant.stock : stock;
+  const discount = currentDiscount(currentMrp, currentPrice);
+
+  function currentDiscount(mrp, selPrice) {
+    if (mrp > selPrice) {
+      return Math.round(((mrp - selPrice) / mrp) * 100);
+    }
+    return 0;
+  }
+
   const handleAddToCart = async () => {
-    const ok = await addToCart(product._id, qty, product);
+    if (currentStock <= 0) {
+      toast.error('Selected size is currently out of stock');
+      return;
+    }
+    const ok = await addToCart(product._id, qty, product, currentVariant?._id);
     if (ok) { 
       setAddedToCart(true); 
-      toast.success('Added to basket!');
       setTimeout(() => setAddedToCart(false), 2000); 
     }
   };
@@ -77,21 +118,6 @@ const ProductDetail = () => {
       setCheckingPincode(false);
     }
   };
-
-  if (loading) return <div className="pt-32"><PageLoader /></div>;
-  if (error || !product) return (
-    <div className="pt-32 min-h-screen flex items-center justify-center bg-white">
-      <div className="text-center">
-        <h2 className="text-4xl font-display font-bold mb-4">Product was replanted...</h2>
-        <p className="text-gray-500 mb-8 text-lg">We couldn't find the page you're looking for.</p>
-        <Link to="/products" className="btn-primary px-8">Return to Shop</Link>
-      </div>
-    </div>
-  );
-
-  const { name, description, price, discountPrice, stock, images, rating, numReviews, category, howToUse } = product;
-  const effectivePrice = discountPrice > 0 ? discountPrice : price;
-  const discount = discountPrice > 0 ? Math.round(((price - discountPrice) / price) * 100) : 0;
 
   return (
     <div className="pt-32 min-h-screen bg-white text-forest-950 font-sans">
@@ -151,7 +177,7 @@ const ProductDetail = () => {
             </div>
           </div>
 
-          {/* 3. Info & Actions Block */}
+          {/* 3. Info & Dynamic Pricing Block */}
           <div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-display font-extrabold mb-4 leading-tight">{name}</h1>
             
@@ -162,28 +188,58 @@ const ProductDetail = () => {
               <div className="text-xs uppercase font-bold tracking-widest text-gray-400">Verified Quality</div>
             </div>
 
+            {/* Dynamic Price Display */}
             <div className="mb-8">
               <div className="flex items-baseline gap-4 mb-2">
-                <span className="text-5xl font-display font-black text-forest-800 tracking-tight">₹{effectivePrice}</span>
-                {discount > 0 && <span className="text-2xl text-gray-300 line-through font-medium">₹{price}</span>}
+                <span className="text-5xl font-display font-black text-forest-800 tracking-tight">₹{currentPrice}</span>
+                {discount > 0 && <span className="text-2xl text-gray-300 line-through font-medium">₹{currentMrp}</span>}
+                {discount > 0 && (
+                  <span className="bg-red-500 text-white text-xs font-extrabold px-2.5 py-1 rounded-lg">
+                    SAVE {discount}%
+                  </span>
+                )}
               </div>
               <p className="text-xs font-bold text-gray-400 tracking-wider">(Incl. of all taxes)</p>
             </div>
 
-            {/* Variants Mockup */}
-            <div className="mb-10">
-              <span className="text-xs uppercase font-extrabold text-gray-400 tracking-widest block mb-4">Available Sizes</span>
-              <div className="flex flex-wrap gap-4">
-                {['1 KG', '5 KG', '10 KG'].map(size => (
-                  <button key={size} onClick={() => setSelectedSize(size)}
-                    className={`px-8 py-4 rounded-2xl border-2 transition-all text-sm font-bold flex flex-col items-center gap-1
-                    ${selectedSize === size ? 'border-forest-600 bg-forest-50 text-forest-800 shadow-md transform -translate-y-1' : 'border-gray-100 hover:border-gray-200 text-gray-400'}`}>
-                    <span>{size}</span>
-                    {size === '1 KG' ? <span className="text-[10px] opacity-70">₹{effectivePrice}</span> : <span className="text-[10px] opacity-70">Contact Us</span>}
-                  </button>
-                ))}
+            {/* Dynamic Variants Selector */}
+            {hasVariants && (
+              <div className="mb-10">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-xs uppercase font-extrabold text-gray-500 tracking-widest block">AVAILABLE SIZES</span>
+                  {currentVariant && (
+                    <span className="text-xs font-semibold text-forest-700">Selected: {currentVariant.name}</span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {activeVariants.map((v) => {
+                    const isSelected = v._id === currentVariant?._id;
+                    const isOutOfStock = v.stock <= 0;
+                    const vPrice = v.discountPrice > 0 ? v.discountPrice : v.price;
+                    return (
+                      <button
+                        key={v._id}
+                        type="button"
+                        onClick={() => setSelectedVariantId(v._id)}
+                        className={`px-6 py-3.5 rounded-2xl border-2 transition-all text-sm font-bold flex flex-col items-center gap-0.5 relative ${
+                          isSelected
+                            ? 'border-forest-600 bg-forest-50 text-forest-900 shadow-md transform -translate-y-1'
+                            : 'border-gray-200 hover:border-forest-300 text-gray-700 bg-white'
+                        } ${isOutOfStock ? 'opacity-60' : ''}`}
+                      >
+                        <span className="text-sm font-black">{v.name}</span>
+                        <span className={`text-[11px] ${isSelected ? 'text-forest-700 font-bold' : 'text-gray-500'}`}>₹{vPrice}</span>
+                        {isOutOfStock && (
+                          <span className="text-[9px] bg-red-100 text-red-700 font-bold px-1.5 py-0.2 rounded-full mt-0.5">
+                            Out of Stock
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Delivery Checker */}
             <div className="mb-12 bg-white border border-gray-100 p-8 rounded-[2.5rem] shadow-sm">
@@ -224,22 +280,33 @@ const ProductDetail = () => {
                 <div className="flex items-center bg-white border border-gray-200 rounded-2xl shadow-sm">
                   <button onClick={() => setQty(Math.max(1, qty - 1))} className="p-4 hover:bg-forest-50 text-forest-800 transition-colors"><FiMinus /></button>
                   <span className="px-6 font-display font-bold text-xl min-w-[60px] text-center">{qty}</span>
-                  <button onClick={() => setQty(Math.min(stock, qty + 1))} className="p-4 hover:bg-forest-50 text-forest-800 transition-colors"><FiPlus /></button>
+                  <button onClick={() => setQty(Math.min(currentStock || 99, qty + 1))} className="p-4 hover:bg-forest-50 text-forest-800 transition-colors"><FiPlus /></button>
                 </div>
                 <div className="text-right pr-4">
                   <div className="text-xs uppercase font-extrabold text-gray-400 tracking-tighter">Total Price</div>
-                  <div className="text-2xl font-black text-forest-900">₹{effectivePrice * qty}</div>
+                  <div className="text-2xl font-black text-forest-900">₹{currentPrice * qty}</div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <button onClick={handleAddToCart} disabled={stock === 0}
+                <button
+                  onClick={handleAddToCart}
+                  disabled={currentStock <= 0}
                   className={`py-5 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all transform active:scale-95
-                  ${addedToCart ? 'bg-green-600 text-white' : 'bg-forest-900 text-white hover:bg-black shadow-xl hover:shadow-forest-500/20'}`}>
-                  {addedToCart ? <FiCheck strokeWidth={3} /> : <FiShoppingBag />} {addedToCart ? 'Added!' : 'Add to Bag'}
+                  ${currentStock <= 0
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed border border-gray-300'
+                    : addedToCart
+                      ? 'bg-green-600 text-white'
+                      : 'bg-forest-900 text-white hover:bg-black shadow-xl hover:shadow-forest-500/20'}`}
+                >
+                  {currentStock <= 0 ? 'Out of Stock' : (addedToCart ? <FiCheck strokeWidth={3} /> : <FiShoppingBag />)}
+                  {currentStock <= 0 ? '' : (addedToCart ? 'Added!' : 'Add to Bag')}
                 </button>
-                <button disabled={stock === 0}
-                  className="py-5 rounded-2xl bg-white border-2 border-forest-900 text-forest-900 font-bold hover:bg-forest-50 transition-all flex items-center justify-center">
+                <button
+                  onClick={handleAddToCart}
+                  disabled={currentStock <= 0}
+                  className={`py-5 rounded-2xl bg-white border-2 border-forest-900 text-forest-900 font-bold hover:bg-forest-50 transition-all flex items-center justify-center ${currentStock <= 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
                   Buy It Now
                 </button>
               </div>
@@ -263,7 +330,7 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        {/* 4. Marketing Grid - Ugaoo Style Lifestyle sections */}
+        {/* Marketing Section */}
         <section className="mt-32 space-y-24">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <motion.div initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }}>
@@ -290,62 +357,14 @@ const ProductDetail = () => {
               />
             </div>
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 bg-forest-50/50 p-12 lg:p-20 rounded-[4rem] border border-forest-100">
-            <div className="lg:col-span-4 h-[500px] rounded-[3rem] overflow-hidden shadow-xl">
-              <img 
-                src="file:///C:/Users/hp/.gemini/antigravity/brain/167db14e-bb01-4827-9ae5-3d3b8469ef4d/urban_balcony_garden_luxury_1776082630591.png" 
-                alt="Garden Lifestyle" 
-                className="w-full h-full object-cover" 
-              />
-            </div>
-            <div className="lg:col-span-8 flex flex-col justify-center">
-              <h3 className="text-3xl lg:text-4xl font-display font-bold mb-8">Carefully Prepared Organic {name}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-                {[
-                  { title: 'Fine Texture', desc: 'Easy to mix and absorbs quickly into the soil root zone.' },
-                  { title: 'Well-Cured', desc: 'Processed for months to ensure zero smell and maximum nutrient density.' },
-                  { title: 'Rich Nitrogen', desc: 'Supports rapid leaf development and vibrant green color.' },
-                  { title: 'Pest-Safe', desc: 'Expertly screened to ensure no larvae or harmful pathogens.' },
-                ].map((point, i) => (
-                  <div key={i} className="flex gap-4">
-                    <div className="w-6 h-6 rounded-full bg-forest-600 shrink-0 mt-1 flex items-center justify-center text-white text-[10px]"><FiCheck /></div>
-                    <div>
-                      <h4 className="font-bold mb-1">{point.title}</h4>
-                      <p className="text-sm text-gray-500 leading-relaxed">{point.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="p-8 rounded-[2rem] bg-forest-900 text-white shadow-xl">
-                <div className="flex items-center gap-4 mb-4">
-                  <FiInfo className="text-amber-400 text-2xl" />
-                  <span className="font-bold">14 Days Replacement Policy</span>
-                </div>
-                <p className="text-sm text-forest-100/70 leading-relaxed">If the product arrived damaged or does not meet our high quality standards, we offer a free replacement or full refund within 14 days of delivery.</p>
-              </div>
-            </div>
-          </div>
         </section>
 
-        {/* 5. Brand Comparison Table */}
-        <section className="mt-32">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-display font-bold mb-4">Why Poshatva Beats Others</h2>
-            <p className="text-gray-500 max-w-2xl mx-auto">We take composting seriously. See how our artisanal process compares to mass-produced industrial alternatives.</p>
-          </div>
-          <div className="max-w-4xl mx-auto">
-            <ComparisonTable />
-          </div>
-        </section>
-
-        {/* 6. Tabs Section - Specifications & FAQ */}
+        {/* Specifications & FAQ */}
         <section className="mt-32 pt-24 border-t border-gray-100">
           <div className="flex gap-12 mb-12 border-b border-gray-100">
             {[
               { id: 'specs', label: 'Specifications', icon: FiInfo },
               { id: 'how', label: 'Guidelines', icon: FiHelpCircle },
-              { id: 'faqs', label: 'Detailed FAQs', icon: FiInfo },
             ].map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 pb-6 text-sm font-bold uppercase tracking-widest transition-all relative
@@ -355,7 +374,7 @@ const ProductDetail = () => {
             ))}
           </div>
 
-          <div className="min-h-[400px]">
+          <div className="min-h-[300px]">
             {activeTab === 'specs' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 gap-x-20 gap-y-1">
                 {[
@@ -363,8 +382,7 @@ const ProductDetail = () => {
                   { label: 'Category', value: category?.name || 'Organic Care' },
                   { label: 'Country of Origin', value: 'INDIA 🇮🇳' },
                   { label: 'Marketed by', value: 'Poshatva Heritage Pvt Ltd.' },
-                  { label: 'Material', value: 'Organic Waste / Animal Manure' },
-                  { label: 'Net Quantity', value: selectedSize },
+                  { label: 'Net Quantity', value: currentVariant?.name || `${product.weight || '1'} ${product.unit || 'kg'}` },
                 ].map((spec, i) => (
                   <div key={i} className="flex items-center justify-between py-5 border-b border-gray-50 group">
                     <span className="text-sm text-gray-500 group-hover:text-forest-900 transition-colors font-medium">{spec.label}</span>
@@ -377,70 +395,14 @@ const ProductDetail = () => {
             {activeTab === 'how' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="prose prose-forest lg:prose-xl max-w-none bg-gray-50 p-12 rounded-[3.5rem] shadow-inner">
                 <h3 className="text-2xl font-display font-bold mb-6 flex items-center gap-3"><FiAward className="text-forest-500" /> Professional Application Guide</h3>
-                <p className="text-gray-600 leading-loose text-lg whitespace-pre-wrap">{howToUse || "Apply 1-2 cups per plant bucket monthly. Mix well with top soil and water immediately. Ideal for early morning or late evening application."}</p>
+                <p className="text-gray-600 leading-loose text-lg whitespace-pre-wrap">{howToUse || "Apply 1-2 cups per plant bucket monthly. Mix well with top soil and water immediately."}</p>
               </motion.div>
             )}
-
-            {activeTab === 'faqs' && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4 max-w-4xl">
-                {[
-                  { q: 'What are the main ingredients?', a: 'Consists of premium organic residue, green leaf compost, and aged animal manure.' },
-                  { q: 'Is it safe for indoor plants?', a: 'Absolutely! Our well-cured process ensures zero odor and no pests, making it perfect for office plants.' },
-                  { q: 'How much should I apply?', a: 'For smaller pots, 100g monthly is plenty. Larger beds might need up to 1kg per season.' },
-                  { q: 'Does it expire?', a: 'Organic manure does not expire if kept dry, but we recommend using it within 18 months for peak freshness.' },
-                ].map((faq, i) => (
-                  <div key={i} className="group overflow-hidden rounded-3xl border border-gray-100 bg-white hover:border-forest-200 transition-all">
-                    <button className="w-full flex items-center justify-between p-6 text-left hover:bg-forest-50/50 transition-colors">
-                      <span className="font-bold text-forest-950">{faq.q}</span>
-                      <FiChevronDown className="text-gray-300 group-hover:text-forest-900 transition-transform" />
-                    </button>
-                    <div className="px-6 pb-6 text-sm text-gray-500 leading-relaxed border-t border-gray-50 pt-4 hidden group-hover:block">
-                      {faq.a}
-                    </div>
-                  </div>
-                ))}
-              </motion.div>
-            )}
-          </div>
-        </section>
-
-        {/* 7. Reviews Section */}
-        <section className="mt-32 pt-24 border-t border-gray-100">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-16">
-            <div>
-              <h2 className="text-4xl lg:text-5xl font-display font-black mb-4">Verified Garden Reports</h2>
-              <div className="flex items-center gap-6">
-                <div className="text-5xl font-black text-forest-900 tracking-tighter">{rating}</div>
-                <div>
-                  <div className="flex gap-1 mb-1">
-                    {[...Array(5)].map((_, i) => (
-                      <FiStar key={i} className={`text-xl ${i < Math.round(rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-200'}`} />
-                    ))}
-                  </div>
-                  <p className="text-[10px] uppercase font-bold tracking-widest text-gray-400">Based on {numReviews} customer reviews</p>
-                </div>
-              </div>
-            </div>
-            <button className="bg-forest-900 text-white px-10 py-5 rounded-3xl font-bold shadow-xl hover:bg-black transition-all transform active:scale-95">
-              Share Your Thoughts
-            </button>
-          </div>
-
-          <div className="bg-forest-50 p-10 lg:p-16 rounded-[4rem] mb-16 border border-forest-100 flex flex-col lg:flex-row gap-12 items-center">
-            <div className="shrink-0 text-center lg:text-left">
-              <span className="text-6xl mb-4 block">🖤</span>
-              <h3 className="text-2xl font-display font-bold mb-2">Why plant lovers adore this</h3>
-              <p className="text-sm text-gray-400 uppercase tracking-widest font-extrabold">Expert Insight</p>
-            </div>
-            <div className="relative flex-1 bg-white p-10 rounded-[3rem] shadow-xl italic text-gray-600 leading-loose text-lg">
-              <span className="absolute -top-6 -left-4 text-8xl text-forest-100 font-serif opacity-50">"</span>
-              Customers consistently praise the fine, odorless texture and the "fast resurrection" effect it has on yellowing leaves. It's safe, potent, and beautifully packaged.
-            </div>
           </div>
         </section>
       </div>
 
-      {/* 8. Sticky Bottom Bar */}
+      {/* Sticky Bottom Bar */}
       <AnimatePresence>
         {showSticky && (
           <motion.div 
@@ -456,22 +418,31 @@ const ProductDetail = () => {
                 </div>
                 <div className="min-w-0">
                   <h4 className="font-bold text-sm text-forest-950 truncate max-w-[200px]">{name}</h4>
-                  <p className="text-lg font-black text-forest-800">₹{effectivePrice}</p>
+                  <p className="text-lg font-black text-forest-800">₹{currentPrice} {currentVariant ? `(${currentVariant.name})` : ''}</p>
                 </div>
               </div>
               
               <div className="flex items-center gap-3">
-                <div className="hidden md:flex items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2">
-                  <select value={selectedSize} onChange={(e) => setSelectedSize(e.target.value)} className="bg-transparent text-sm font-bold focus:outline-none cursor-pointer pr-2">
-                    <option>1 KG</option>
-                    <option>5 KG</option>
-                    <option>10 KG</option>
-                  </select>
-                </div>
-                <button onClick={handleAddToCart} disabled={stock === 0}
+                {hasVariants && (
+                  <div className="hidden md:flex items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 py-2">
+                    <select
+                      value={selectedVariantId}
+                      onChange={(e) => setSelectedVariantId(e.target.value)}
+                      className="bg-transparent text-sm font-bold focus:outline-none cursor-pointer pr-2"
+                    >
+                      {activeVariants.map((v) => (
+                        <option key={v._id} value={v._id}>
+                          {v.name} - ₹{v.discountPrice > 0 ? v.discountPrice : v.price}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <button onClick={handleAddToCart} disabled={currentStock <= 0}
                   className={`flex items-center justify-center gap-3 h-14 px-8 md:px-12 rounded-2xl font-bold transition-all shadow-xl hover:shadow-forest-500/20 active:scale-95
-                  ${addedToCart ? 'bg-green-600 text-white' : 'bg-forest-900 text-white hover:bg-black'}`}>
-                  {addedToCart ? <FiCheck strokeWidth={3} /> : <FiShoppingBag />} <span className="hidden sm:inline">{addedToCart ? 'Added!' : 'Add to Basket'}</span>
+                  ${currentStock <= 0 ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : addedToCart ? 'bg-green-600 text-white' : 'bg-forest-900 text-white hover:bg-black'}`}>
+                  {currentStock <= 0 ? 'Out of Stock' : (addedToCart ? <FiCheck strokeWidth={3} /> : <FiShoppingBag />)}
+                  <span className="hidden sm:inline">{currentStock <= 0 ? '' : (addedToCart ? 'Added!' : 'Add to Basket')}</span>
                 </button>
               </div>
             </div>

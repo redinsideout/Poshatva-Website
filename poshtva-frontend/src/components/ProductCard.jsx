@@ -11,9 +11,15 @@ const ProductCard = ({ product }) => {
   const [wishlisted, setWishlisted] = useState(false);
   const [added, setAdded] = useState(false);
 
-  const { name, slug, images, price, discountPrice, rating, numReviews, stock } = product;
-  const effectivePrice = discountPrice > 0 ? discountPrice : price;
-  const discount = discountPrice > 0 ? Math.round(((price - discountPrice) / price) * 100) : 0;
+  const { name, slug, images, price, discountPrice, rating, numReviews, stock, variants = [] } = product;
+  const activeVariants = variants.filter((v) => v.isActive !== false);
+  const defaultVariant = activeVariants[0];
+
+  const basePrice = defaultVariant ? defaultVariant.price : price;
+  const baseDiscountPrice = defaultVariant ? defaultVariant.discountPrice : discountPrice;
+  const effectivePrice = baseDiscountPrice > 0 ? baseDiscountPrice : basePrice;
+  const discount = baseDiscountPrice > 0 ? Math.round(((basePrice - baseDiscountPrice) / basePrice) * 100) : 0;
+  const effectiveStock = defaultVariant ? defaultVariant.stock : stock;
   const imgSrc = getImageUrl(images?.[0]);
 
   const handleWishlist = (e) => {
@@ -32,9 +38,8 @@ const ProductCard = ({ product }) => {
     e.preventDefault();
     e.stopPropagation();
     try {
-      await addToCart(product._id, 1, product);
+      await addToCart(product._id, 1, product, defaultVariant?._id);
       setAdded(true);
-      toast.success(`Added ${name} to cart!`);
       setTimeout(() => setAdded(false), 2000);
     } catch (err) {
       toast.error('Failed to add to cart');
@@ -92,7 +97,7 @@ const ProductCard = ({ product }) => {
         )}
 
         {/* Out of Stock Overlay */}
-        {stock === 0 && (
+        {effectiveStock === 0 && (
           <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10">
             <span className="bg-gray-800 text-white text-xs font-bold px-4 py-2 rounded-full tracking-wider uppercase">
               Sold Out
@@ -127,16 +132,16 @@ const ProductCard = ({ product }) => {
           <div className="flex items-baseline gap-2">
             <span className="text-lg font-black text-[#0B6B3A]">₹{effectivePrice}</span>
             {discount > 0 && (
-              <span className="text-xs text-gray-400 line-through font-medium">₹{price}</span>
+              <span className="text-xs text-gray-400 line-through font-medium">₹{basePrice}</span>
             )}
           </div>
 
           {/* Quick Buy / Add button */}
           <button
             onClick={handleAddToCart}
-            disabled={stock === 0}
+            disabled={effectiveStock === 0}
             className={`w-full py-2.5 rounded-xl font-bold text-xs md:text-sm tracking-wide uppercase transition-all duration-300 flex items-center justify-center gap-2 border shadow-sm ${
-              stock === 0
+              effectiveStock === 0
                 ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
                 : added
                   ? 'bg-green-50 border-green-200 text-green-700'

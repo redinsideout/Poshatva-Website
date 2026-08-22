@@ -7,9 +7,13 @@ const orderSchema = new mongoose.Schema(
       {
         product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
         name: { type: String, required: true },
+        variantId: { type: String, default: '' },
+        variantName: { type: String, default: '' },
         image: { type: String },
         price: { type: Number, required: true },
+        mrp: { type: Number, default: 0 },
         quantity: { type: Number, required: true },
+        weightInKg: { type: Number, default: 0.5 },
       },
     ],
     shippingAddress: {

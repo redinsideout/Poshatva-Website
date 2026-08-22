@@ -46,42 +46,76 @@ export const CartProvider = ({ children }) => {
     if (!guest.items.length) return;
     (async () => {
       for (const item of guest.items) {
-        try { await cartAPI.addToCart({ productId: item.product._id || item.product, quantity: item.quantity }); }
-        catch { /* skip if already there */ }
+        try {
+          await cartAPI.addToCart({
+            productId: item.product._id || item.product,
+            variantId: item.variantId || '',
+            quantity: item.quantity,
+          });
+        } catch { /* skip if error */ }
       }
       localStorage.removeItem(GUEST_CART_KEY);
       fetchCart();
     })();
   }, [user]); // eslint-disable-line
 
-  const addToCart = async (productId, quantity = 1, productData = null) => {
+  const addToCart = async (productId, quantity = 1, productData = null, variantId = '') => {
+    // Resolve variant details from productData if passed
+    let selectedPrice = productData?.discountPrice > 0 ? productData.discountPrice : productData?.price || 0;
+    let selectedMrp = productData?.price || 0;
+    let selectedVariantName = '';
+    let selectedWeight = productData?.weightInKg || 0.5;
+    let actualVariantId = variantId || '';
+
+    if (productData?.variants?.length > 0) {
+      const matchVar = variantId
+        ? (productData.variants.find(v => v._id === variantId || v._id?.toString() === variantId))
+        : productData.variants.find(v => v.isActive !== false);
+
+      if (matchVar) {
+        selectedPrice = matchVar.discountPrice > 0 ? matchVar.discountPrice : matchVar.price;
+        selectedMrp = matchVar.price;
+        selectedVariantName = matchVar.name;
+        selectedWeight = matchVar.weightInKg || 0.5;
+        actualVariantId = matchVar._id?.toString() || variantId;
+      }
+    }
+
     if (!user) {
       // Guest mode — store in localStorage
       const guest = getGuestCart();
-      const existing = guest.items.findIndex((i) => (i.product._id || i.product) === productId);
+      const existingIdx = guest.items.findIndex(
+        (i) => (i.product._id || i.product) === productId && (i.variantId || '') === actualVariantId
+      );
+
       let updatedItems;
-      if (existing >= 0) {
+      if (existingIdx >= 0) {
         updatedItems = guest.items.map((item, idx) =>
-          idx === existing ? { ...item, quantity: item.quantity + quantity } : item
+          idx === existingIdx ? { ...item, quantity: item.quantity + quantity, price: selectedPrice } : item
         );
       } else {
         const newItem = {
           product: productData ? productData : { _id: productId },
+          variantId: actualVariantId,
+          variantName: selectedVariantName,
+          mrp: selectedMrp,
+          weightInKg: selectedWeight,
           quantity,
-          price: productData?.discountPrice > 0 ? productData.discountPrice : productData?.price || 0,
+          price: selectedPrice,
         };
         updatedItems = [...guest.items, newItem];
       }
       const updated = { items: updatedItems, totalAmount: calcGuestTotal(updatedItems) };
       saveGuestCart(updated);
       setCart(updated);
-      toast.success('Added to cart! 🌿');
+      toast.success(`Added ${productData?.name || 'product'} ${selectedVariantName ? `(${selectedVariantName})` : ''} to basket! 🌿`);
       return true;
     }
+
     try {
-      const data = await cartAPI.addToCart({ productId, quantity });
+      const data = await cartAPI.addToCart({ productId, variantId: actualVariantId, quantity });
       setCart(data.cart);
-      toast.success('Added to cart!');
+      toast.success(`Added to basket! 🌿`);
       return true;
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to add to cart');
@@ -89,10 +123,14 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const removeFromCart = async (productId) => {
+  const removeFromCart = async (productId, variantId = '') => {
     if (!user) {
       const guest = getGuestCart();
-      const updatedItems = guest.items.filter((i) => (i.product._id || i.product) !== productId);
+      const updatedItems = guest.items.filter((i) => {
+        const pMatch = (i.product._id || i.product) === productId;
+        const vMatch = (i.variantId || '') === (variantId || '');
+        return !(pMatch && vMatch);
+      });
       const updated = { items: updatedItems, totalAmount: calcGuestTotal(updatedItems) };
       saveGuestCart(updated);
       setCart(updated);
@@ -100,7 +138,7 @@ export const CartProvider = ({ children }) => {
       return;
     }
     try {
-      const data = await cartAPI.removeFromCart(productId);
+      const data = await cartAPI.removeFromCart(productId, variantId);
       setCart(data.cart);
       toast.success('Item removed from cart');
     } catch (err) {
@@ -108,20 +146,22 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const updateQuantity = async (productId, quantity) => {
-    if (quantity < 1) { removeFromCart(productId); return; }
+  const updateQuantity = async (productId, quantity, variantId = '') => {
+    if (quantity < 1) { removeFromCart(productId, variantId); return; }
     if (!user) {
       const guest = getGuestCart();
-      const updatedItems = guest.items.map((i) =>
-        (i.product._id || i.product) === productId ? { ...i, quantity } : i
-      );
+      const updatedItems = guest.items.map((i) => {
+        const pMatch = (i.product._id || i.product) === productId;
+        const vMatch = (i.variantId || '') === (variantId || '');
+        return (pMatch && vMatch) ? { ...i, quantity } : i;
+      });
       const updated = { items: updatedItems, totalAmount: calcGuestTotal(updatedItems) };
       saveGuestCart(updated);
       setCart(updated);
       return;
     }
     try {
-      const data = await cartAPI.addToCart({ productId, quantity });
+      const data = await cartAPI.addToCart({ productId, variantId, quantity });
       setCart(data.cart);
     } catch (err) {
       toast.error('Failed to update quantity');

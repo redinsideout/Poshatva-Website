@@ -5,13 +5,14 @@ import { productsAPI } from '../../api/products';
 import { categoriesAPI, uploadAPI } from '../../api/index';
 import { PageLoader } from '../../components/LoadingSpinner';
 import toast from 'react-hot-toast';
-import { FiUpload, FiX, FiSave, FiArrowLeft } from 'react-icons/fi';
+import { FiUpload, FiX, FiSave, FiArrowLeft, FiPlus, FiTrash2, FiLayers } from 'react-icons/fi';
 
 const API_URL = process.env.REACT_APP_API_URL?.replace('/api', '') || 'http://localhost:5000';
 
 const initialForm = {
   name: '', slug: '', description: '', richDescription: '', category: '',
   price: '', discountPrice: '', stock: '', weight: '', unit: 'kg',
+  variants: [],
   tags: '', isFeatured: false, isActive: true, benefits: '', howToUse: '', images: [],
 };
 
@@ -25,7 +26,6 @@ const AdminProductForm = () => {
   const [saving, setSaving]     = useState(false);
   const [uploading, setUploading] = useState(false);
 
-
   useEffect(() => {
     document.title = `${isEdit ? 'Edit' : 'Add'} Product — Admin`;
     categoriesAPI.getAll().then((d) => setCategories(d.categories || [])).catch(console.error);
@@ -37,6 +37,7 @@ const AdminProductForm = () => {
             name: p.name, slug: p.slug, description: p.description, richDescription: p.richDescription || '',
             category: p.category?._id || '', price: p.price, discountPrice: p.discountPrice || '',
             stock: p.stock, weight: p.weight || '', unit: p.unit || 'kg',
+            variants: p.variants || [],
             tags: p.tags?.join(', ') || '', isFeatured: p.isFeatured, isActive: p.isActive,
             benefits: p.benefits?.join('\n') || '', howToUse: p.howToUse || '', images: p.images || [],
           });
@@ -58,11 +59,41 @@ const AdminProductForm = () => {
     setForm({ ...form, name, slug: !isEdit ? autoSlug(name) : form.slug });
   };
 
+  // ── Variant Management Handlers ─────────────────────────
+  const handleAddVariant = () => {
+    const newVariant = {
+      name: '1 KG',
+      value: 1,
+      unit: 'kg',
+      price: Number(form.price) || 299,
+      discountPrice: Number(form.discountPrice) || 249,
+      stock: Number(form.stock) || 50,
+      weightInKg: 1,
+      sku: '',
+      isActive: true,
+    };
+    setForm({ ...form, variants: [...form.variants, newVariant] });
+  };
+
+  const handleVariantChange = (index, field, value) => {
+    const updatedVariants = form.variants.map((v, i) => {
+      if (i === index) {
+        return { ...v, [field]: value };
+      }
+      return v;
+    });
+    setForm({ ...form, variants: updatedVariants });
+  };
+
+  const handleRemoveVariant = (index) => {
+    setForm({ ...form, variants: form.variants.filter((_, i) => i !== index) });
+  };
+
+  // ── Image Upload ────────────────────────────────────────
   const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
 
-    // --- Frontend validation ---
     const MAX_SIZE_MB = 5;
     const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     for (const file of files) {
@@ -80,14 +111,11 @@ const AdminProductForm = () => {
     try {
       const formData = new FormData();
       files.forEach((f) => formData.append('images', f));
-      console.log('[Upload] Sending', files.length, 'file(s) to /api/upload');
       const data = await uploadAPI.uploadImages(formData);
-      console.log('[Upload] Success:', data);
       setForm((prev) => ({ ...prev, images: [...prev.images, ...data.urls] }));
       toast.success(`${data.urls.length} image(s) uploaded successfully!`);
     } catch (err) {
       const serverMsg = err.response?.data?.message || err.message || 'Unknown error';
-      console.error('[Upload] Failed:', serverMsg, err.response?.data || err);
       toast.error(`Image upload failed: ${serverMsg}`);
     } finally {
       setUploading(false);
@@ -102,15 +130,26 @@ const AdminProductForm = () => {
       toast.error('Please fill all required fields');
       return;
     }
+
     setSaving(true);
+    const formattedVariants = form.variants.map((v) => ({
+      ...v,
+      price: Number(v.price) || 0,
+      discountPrice: Number(v.discountPrice) || 0,
+      stock: Number(v.stock) || 0,
+      weightInKg: Number(v.weightInKg) || 0.5,
+    }));
+
     const payload = {
       ...form,
       price:        Number(form.price),
       discountPrice:Number(form.discountPrice) || 0,
       stock:        Number(form.stock),
+      variants:     formattedVariants,
       tags:         form.tags.split(',').map((t) => t.trim()).filter(Boolean),
       benefits:     form.benefits.split('\n').map((b) => b.trim()).filter(Boolean),
     };
+
     try {
       if (isEdit) {
         await productsAPI.update(id, payload);
@@ -141,7 +180,7 @@ const AdminProductForm = () => {
             <h3 className="font-semibold text-gray-800">Basic Information</h3>
             <div>
               <label className="label">Product Name *</label>
-              <input name="name" value={form.name} onChange={handleNameChange} required className="input-field" placeholder="e.g. Premium Cocopeat Block 5kg" />
+              <input name="name" value={form.name} onChange={handleNameChange} required className="input-field" placeholder="e.g. Premium Cocopeat Block" />
             </div>
             <div>
               <label className="label">Slug *</label>
@@ -169,12 +208,140 @@ const AdminProductForm = () => {
             </div>
           </div>
 
+          {/* ── Product Variants Section ───────────────────── */}
+          <div className="card p-6">
+            <div className="flex items-center justify-between mb-4 border-b pb-3">
+              <div>
+                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                  <FiLayers className="text-forest-600" /> Product Variants & Dynamic Pricing
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">Add weights/sizes (e.g. 1 KG, 5 KG, 10 KG) with custom prices and stock.</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleAddVariant}
+                className="btn-primary text-xs py-2 px-3 inline-flex items-center gap-1.5"
+              >
+                <FiPlus /> Add Variant
+              </button>
+            </div>
+
+            {form.variants.length === 0 ? (
+              <div className="text-center py-6 bg-gray-50/70 rounded-2xl border border-dashed border-gray-200">
+                <p className="text-sm text-gray-500 mb-2">No variants added yet.</p>
+                <p className="text-xs text-gray-400">The product will use the single default price configured on the right sidebar.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {form.variants.map((variant, index) => (
+                  <div key={index} className="p-4 border border-gray-200 rounded-2xl bg-gray-50/50 space-y-3 relative group">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-forest-800 uppercase tracking-wider">
+                        Variant #{index + 1}: {variant.name || 'Unnamed'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveVariant(index)}
+                        className="text-red-500 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 transition-colors text-xs inline-flex items-center gap-1"
+                      >
+                        <FiTrash2 /> Remove
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div>
+                        <label className="label text-[11px]">Variant Name / Size *</label>
+                        <input
+                          type="text"
+                          value={variant.name}
+                          onChange={(e) => handleVariantChange(index, 'name', e.target.value)}
+                          placeholder="e.g. 5 KG"
+                          required
+                          className="input-field text-xs py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="label text-[11px]">MRP (Base Price ₹) *</label>
+                        <input
+                          type="number"
+                          value={variant.price}
+                          onChange={(e) => handleVariantChange(index, 'price', e.target.value)}
+                          placeholder="999"
+                          required
+                          min="0"
+                          className="input-field text-xs py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="label text-[11px]">Selling Price (₹)</label>
+                        <input
+                          type="number"
+                          value={variant.discountPrice}
+                          onChange={(e) => handleVariantChange(index, 'discountPrice', e.target.value)}
+                          placeholder="899"
+                          min="0"
+                          className="input-field text-xs py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="label text-[11px]">Stock *</label>
+                        <input
+                          type="number"
+                          value={variant.stock}
+                          onChange={(e) => handleVariantChange(index, 'stock', e.target.value)}
+                          placeholder="20"
+                          required
+                          min="0"
+                          className="input-field text-xs py-2"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div>
+                        <label className="label text-[11px]">Weight in KG (Shiprocket)</label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={variant.weightInKg || 0.5}
+                          onChange={(e) => handleVariantChange(index, 'weightInKg', e.target.value)}
+                          placeholder="5"
+                          className="input-field text-xs py-2"
+                        />
+                      </div>
+                      <div>
+                        <label className="label text-[11px]">SKU (Optional)</label>
+                        <input
+                          type="text"
+                          value={variant.sku || ''}
+                          onChange={(e) => handleVariantChange(index, 'sku', e.target.value)}
+                          placeholder="COCO-5KG"
+                          className="input-field text-xs py-2"
+                        />
+                      </div>
+                      <div className="col-span-2 flex items-center pt-5">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={variant.isActive !== false}
+                            onChange={(e) => handleVariantChange(index, 'isActive', e.target.checked)}
+                            className="rounded text-forest-600 focus:ring-forest-500 w-4 h-4"
+                          />
+                          Active (Visible for purchase)
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Images */}
           <div className="card p-6">
             <h3 className="font-semibold text-gray-800 mb-4">Product Images</h3>
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-4">
               {form.images.map((url, i) => {
-                // Cloudinary returns absolute https:// URLs; local uploads are relative paths.
                 const imgSrc = url.startsWith('http') ? url : `${API_URL}${url}`;
                 return (
                   <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 group">
@@ -199,23 +366,23 @@ const AdminProductForm = () => {
         {/* Sidebar */}
         <div className="space-y-5">
           <div className="card p-6 space-y-4">
-            <h3 className="font-semibold text-gray-800">Pricing & Stock</h3>
+            <h3 className="font-semibold text-gray-800">Base Pricing & Stock (Fallback)</h3>
             <div>
-              <label className="label">Price (₹) *</label>
+              <label className="label">Default Price (₹) *</label>
               <input name="price" type="number" value={form.price} onChange={handleChange} required min="0" className="input-field" placeholder="0" />
             </div>
             <div>
-              <label className="label">Discount Price (₹)</label>
+              <label className="label">Default Discount Price (₹)</label>
               <input name="discountPrice" type="number" value={form.discountPrice} onChange={handleChange} min="0" className="input-field" placeholder="0" />
             </div>
             <div>
-              <label className="label">Stock *</label>
+              <label className="label">Default Stock *</label>
               <input name="stock" type="number" value={form.stock} onChange={handleChange} required min="0" className="input-field" placeholder="0" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="label">Weight</label>
-                <input name="weight" value={form.weight} onChange={handleChange} className="input-field" placeholder="5" />
+                <label className="label">Default Weight</label>
+                <input name="weight" value={form.weight} onChange={handleChange} className="input-field" placeholder="1" />
               </div>
               <div>
                 <label className="label">Unit</label>

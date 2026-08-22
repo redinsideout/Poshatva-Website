@@ -65,13 +65,13 @@ const getProductById = asyncHandler(async (req, res) => {
 
 // @desc  Create product (admin)
 const createProduct = asyncHandler(async (req, res) => {
-  const { name, slug, description, richDescription, category, price, discountPrice, stock, images, weight, unit, tags, isFeatured, benefits, howToUse } = req.body;
+  const { name, slug, description, richDescription, category, price, discountPrice, stock, variants, images, weight, unit, tags, isFeatured, benefits, howToUse } = req.body;
   const exists = await Product.findOne({ slug });
   if (exists) {
     res.status(400);
     throw new Error('Product with this slug already exists');
   }
-  const product = await Product.create({ name, slug, description, richDescription, category, price, discountPrice, stock, images, weight, unit, tags, isFeatured, benefits, howToUse });
+  const product = await Product.create({ name, slug, description, richDescription, category, price, discountPrice, stock, variants: variants || [], images, weight, unit, tags, isFeatured, benefits, howToUse });
   res.status(201).json({ success: true, product });
 });
 

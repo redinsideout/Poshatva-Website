@@ -6,27 +6,87 @@ const shiprocketService = require('../services/shiprocketService');
 
 // @desc  Create order
 const createOrder = asyncHandler(async (req, res) => {
-  const { orderItems, shippingAddress, paymentMethod, itemsPrice, taxPrice, shippingPrice } = req.body;
+  const { orderItems, shippingAddress, paymentMethod, taxPrice = 0, shippingPrice = 0 } = req.body;
   if (!orderItems || orderItems.length === 0) {
     res.status(400);
     throw new Error('No order items');
+  }
+
+  const Product = require('../models/Product');
+  const validatedOrderItems = [];
+  let calculatedItemsPrice = 0;
+
+  for (const item of orderItems) {
+    const product = await Product.findById(item.product);
+    if (!product || !product.isActive) {
+      res.status(400);
+      throw new Error(`Product ${item.name || item.product} is not available`);
+    }
+
+    let unitPrice = product.discountPrice > 0 ? product.discountPrice : product.price;
+    let unitMrp = product.price;
+    let variantName = item.variantName || '';
+    let itemWeight = item.weightInKg || product.weightInKg || 0.5;
+
+    if (item.variantId && product.variants?.length > 0) {
+      const variant = product.variants.id(item.variantId) || product.variants.find((v) => v._id.toString() === item.variantId.toString());
+      if (!variant || variant.isActive === false) {
+        res.status(400);
+        throw new Error(`Variant ${item.variantName || item.variantId} for product ${product.name} is no longer available`);
+      }
+      if (variant.stock < item.quantity) {
+        res.status(400);
+        throw new Error(`Insufficient stock for ${product.name} (${variant.name})`);
+      }
+      unitPrice = variant.discountPrice > 0 ? variant.discountPrice : variant.price;
+      unitMrp = variant.price;
+      variantName = variant.name;
+      itemWeight = variant.weightInKg || 0.5;
+
+      // Decrement variant stock
+      variant.stock -= item.quantity;
+    } else {
+      if (product.stock < item.quantity) {
+        res.status(400);
+        throw new Error(`Insufficient stock for ${product.name}`);
+      }
+      // Decrement product root stock
+      product.stock -= item.quantity;
+    }
+
+    await product.save();
+
+    const lineTotal = unitPrice * item.quantity;
+    calculatedItemsPrice += lineTotal;
+
+    validatedOrderItems.push({
+      product: product._id,
+      name: product.name,
+      variantId: item.variantId || '',
+      variantName,
+      image: item.image || product.images?.[0] || '',
+      price: unitPrice,
+      mrp: unitMrp,
+      quantity: item.quantity,
+      weightInKg: itemWeight,
+    });
   }
 
   const isRegistered = !!req.user;
   const userType = isRegistered ? 'Registered' : 'Guest';
 
   const codCharge = paymentMethod === 'cod' ? 59 : 0;
-  const calculatedTotal = Number(itemsPrice) + Number(taxPrice) + Number(shippingPrice) + codCharge;
+  const calculatedTotal = calculatedItemsPrice + Number(taxPrice) + Number(shippingPrice) + codCharge;
 
   const order = await Order.create({
     user: req.user ? req.user._id : undefined,
     userType,
-    orderItems,
+    orderItems: validatedOrderItems,
     shippingAddress,
     paymentMethod: paymentMethod || 'razorpay',
-    itemsPrice,
-    taxPrice,
-    shippingPrice,
+    itemsPrice: calculatedItemsPrice,
+    taxPrice: Number(taxPrice),
+    shippingPrice: Number(shippingPrice),
     codCharge,
     totalPrice: calculatedTotal,
   });

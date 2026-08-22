@@ -10,6 +10,21 @@ const reviewSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+const variantSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true }, // e.g. "1 KG", "5 KG", "10 KG"
+    value: { type: Number },               // e.g. 1, 5, 10
+    unit: { type: String, default: 'kg' }, // e.g. "kg", "g", "L", "ml", "pack"
+    price: { type: Number, required: true, min: 0 },         // MRP / Base Price
+    discountPrice: { type: Number, default: 0 },             // Selling Price
+    stock: { type: Number, default: 0 },                     // Variant Stock
+    weightInKg: { type: Number, default: 0.5 },              // Shipping Weight in KG
+    sku: { type: String, default: '' },
+    isActive: { type: Boolean, default: true },
+  },
+  { _id: true, timestamps: true }
+);
+
 const productSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -20,6 +35,7 @@ const productSchema = new mongoose.Schema(
     price: { type: Number, required: true, min: 0 },
     discountPrice: { type: Number, default: 0 },
     stock: { type: Number, required: true, default: 0 },
+    variants: [variantSchema],
     images: [{ type: String }],
     weight: { type: String, default: '' },
     weightInKg: { type: Number, default: 0.5 },

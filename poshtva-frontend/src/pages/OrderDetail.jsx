@@ -106,7 +106,10 @@ const OrderDetail = () => {
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-gray-800 text-sm">{item.name}</p>
-                      <p className="text-gray-500 text-xs">Qty: {item.quantity}</p>
+                      {item.variantName && (
+                        <p className="text-xs text-forest-700 font-bold mt-0.5">Variant: {item.variantName}</p>
+                      )}
+                      <p className="text-gray-500 text-xs mt-0.5">Qty: {item.quantity}</p>
                     </div>
                     <p className="font-semibold text-gray-800 text-sm">₹{(item.price * item.quantity).toFixed(2)}</p>
                   </div>

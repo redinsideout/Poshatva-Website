@@ -94,17 +94,20 @@ async function apiRequest(method, url, data = null, params = null) {
  * @returns {Object} { order_id, shipment_id, status, ... }
  */
 async function createOrder(order) {
-  const orderItems = order.orderItems.map((item, index) => ({
-    name: item.name,
-    sku: item.product ? item.product.toString() : `SKU-${index}`,
-    units: item.quantity,
-    selling_price: item.price,
-    discount: 0,
-    tax: 0,
-    hsn: '',
-  }));
+  const orderItems = order.orderItems.map((item, index) => {
+    const itemName = item.variantName ? `${item.name} - ${item.variantName}` : item.name;
+    return {
+      name: itemName,
+      sku: item.variantId || (item.product ? item.product.toString() : `SKU-${index}`),
+      units: item.quantity,
+      selling_price: item.price,
+      discount: 0,
+      tax: 0,
+      hsn: '',
+    };
+  });
 
-  // Calculate total weight from order items (fallback: 0.5 kg per item)
+  // Calculate total weight from order items (uses variant weightInKg if present)
   const totalWeight = order.orderItems.reduce((sum, item) => {
     const itemWeight = item.weightInKg || 0.5;
     return sum + itemWeight * item.quantity;

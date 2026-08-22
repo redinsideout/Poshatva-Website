@@ -52,12 +52,15 @@ const Cart = () => {
               {items.map((item) => {
                 const p = item.product;
                 if (!p) return null;
-                const pid    = p._id || p;
-                const pname  = p.name || item.name || 'Product';
-                const pslug  = p.slug;
-                const imgSrc = getImageUrl(p.images?.[0]);
+                const pid       = p._id || p;
+                const pname     = p.name || item.name || 'Product';
+                const pslug     = p.slug;
+                const variantId = item.variantId || '';
+                const vname     = item.variantName || '';
+                const imgSrc    = getImageUrl(p.images?.[0]);
+
                 return (
-                  <motion.div key={item._id || pid} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
+                  <motion.div key={item._id || `${pid}-${variantId}`} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
                     className="card p-5 flex gap-4">
                     {/* Image */}
                     <div className="flex-shrink-0 w-20 h-20 bg-forest-50 rounded-xl overflow-hidden">
@@ -72,17 +75,22 @@ const Cart = () => {
                         ? <Link to={`/products/${pslug}`} className="font-semibold text-gray-800 hover:text-forest-600 transition-colors text-sm line-clamp-2">{pname}</Link>
                         : <p className="font-semibold text-gray-800 text-sm line-clamp-2">{pname}</p>
                       }
+                      {vname && (
+                        <span className="text-xs bg-forest-50 text-forest-700 px-2 py-0.5 rounded-md font-bold mt-1 inline-block">
+                          Variant: {vname}
+                        </span>
+                      )}
                       <p className="text-forest-600 font-bold mt-1">₹{item.price}</p>
                     </div>
                     {/* Quantity + Delete */}
                     <div className="flex flex-col items-end justify-between">
-                      <button onClick={() => removeFromCart(pid)} className="text-gray-400 hover:text-red-500 transition-colors p-1">
+                      <button onClick={() => removeFromCart(pid, variantId)} className="text-gray-400 hover:text-red-500 transition-colors p-1">
                         <FiTrash2 className="text-sm" />
                       </button>
                       <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden">
-                        <button onClick={() => updateQuantity(pid, item.quantity - 1)} className="px-2.5 py-1.5 hover:bg-gray-100 transition-colors"><FiMinus className="text-xs" /></button>
+                        <button onClick={() => updateQuantity(pid, item.quantity - 1, variantId)} className="px-2.5 py-1.5 hover:bg-gray-100 transition-colors"><FiMinus className="text-xs" /></button>
                         <span className="px-2.5 py-1.5 text-sm font-semibold min-w-[30px] text-center">{item.quantity}</span>
-                        <button onClick={() => updateQuantity(pid, item.quantity + 1)} className="px-2.5 py-1.5 hover:bg-gray-100 transition-colors"><FiPlus className="text-xs" /></button>
+                        <button onClick={() => updateQuantity(pid, item.quantity + 1, variantId)} className="px-2.5 py-1.5 hover:bg-gray-100 transition-colors"><FiPlus className="text-xs" /></button>
                       </div>
                       <p className="text-sm font-bold text-gray-800">₹{(item.price * item.quantity).toFixed(2)}</p>
                     </div>

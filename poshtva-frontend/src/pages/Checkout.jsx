@@ -157,11 +157,15 @@ const Checkout = () => {
       // Create order in DB
       const { order: dbOrder } = await ordersAPI.create({
         orderItems: cart.items.map((item) => ({
-          product: item.product._id || item.product,
-          name:    item.product.name || item.name,
-          image:   item.product.images?.[0] || item.image || '',
-          price:   item.price,
-          quantity: item.quantity,
+          product:    item.product._id || item.product,
+          name:       item.product.name || item.name,
+          variantId:  item.variantId || '',
+          variantName:item.variantName || '',
+          image:      item.product.images?.[0] || item.image || '',
+          price:      item.price,
+          mrp:        item.mrp || item.price,
+          quantity:   item.quantity,
+          weightInKg: item.weightInKg || 0.5,
         })),
         shippingAddress: shippingWithCoords,
         paymentMethod:   paymentMethod,
@@ -446,12 +450,17 @@ const Checkout = () => {
                   const name = p.name || item.name;
                   const imgSrc = getImageUrl(p.images?.[0] || item.image);
                   return (
-                    <div key={item._id || p._id} className="flex gap-3">
+                    <div key={item._id || `${p._id || p}-${item.variantId || ''}`} className="flex gap-3">
                       <div className="w-14 h-14 bg-forest-50 rounded-lg overflow-hidden flex-shrink-0">
                         {imgSrc ? <img src={imgSrc} alt={name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center">🌿</div>}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-gray-800 line-clamp-1">{name}</p>
+                        {item.variantName && (
+                          <span className="text-xs text-forest-700 font-bold block">
+                            Variant: {item.variantName}
+                          </span>
+                        )}
                         <p className="text-xs text-gray-500 mt-0.5">Qty: {item.quantity}</p>
                       </div>
                       <span className="font-bold text-sm text-gray-800">₹{(item.price * item.quantity).toFixed(2)}</span>
