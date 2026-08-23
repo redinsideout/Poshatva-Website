@@ -135,28 +135,19 @@ const assignAWB = asyncHandler(async (req, res) => {
   try {
     const awbResult = await shiprocketService.assignAWB(shipmentId, parsedCourierId);
 
-    console.log('[SHIPROCKET] AWB service returned:', JSON.stringify({
-      awbAssignStatus: awbResult?.awbAssignStatus,
-      awbCode: awbResult?.awbCode,
-      courierName: awbResult?.courierName,
-      courierCompanyId: awbResult?.courierCompanyId,
-      awbAssignError: awbResult?.awbAssignError,
-    }));
+    const responseData = awbResult?.data || awbResult;
+    const awbData = responseData?.response?.data || responseData?.data || {};
+    const awbCode = awbData?.awb_code || responseData?.awb_code || null;
+    const courierName = awbData?.courier_name || responseData?.courier_name || null;
+    const assignedCourierId = awbData?.courier_company_id || responseData?.courier_company_id || parsedCourierId || null;
 
-    const awbCode = awbResult?.awbCode || null;
-    const courierName = awbResult?.courierName || null;
-    const assignedCourierId = awbResult?.courierCompanyId || parsedCourierId || null;
-
-    if (!awbCode || awbResult?.awbAssignStatus === 0) {
-      const detailedError =
-        awbResult?.awbAssignError ||
-        (awbResult?.raw ? `Shiprocket response: ${JSON.stringify(awbResult.raw)}` : null) ||
-        'AWB assignment failed — no AWB code in Shiprocket response';
-
-      console.error('[SHIPROCKET] AWB rejected — raw response:', JSON.stringify(awbResult?.raw));
-
-      res.status(400);
-      throw new Error(detailedError);
+    if (!awbCode || responseData?.awb_assign_status === 0) {
+      console.error('[SHIPROCKET AWB REJECTED RESPONSE]', JSON.stringify(responseData, null, 2));
+      return res.status(400).json({
+        success: false,
+        message: 'Shiprocket AWB assignment failed',
+        shiprocketResponse: responseData,
+      });
     }
 
     order.shiprocket.awbCode = awbCode;
@@ -182,32 +173,12 @@ const assignAWB = asyncHandler(async (req, res) => {
     console.log(`[SHIPROCKET] AWB assigned successfully: ${awbCode} via ${courierName || 'Courier'}`);
     return res.json({ success: true, awbCode, courierName, courierId: assignedCourierId, order });
   } catch (err) {
-    // Log the actual error details
-    const srErrData = err.response?.data;
-    console.error('[SHIPROCKET] AWB assignment error:', {
-      message: err.message,
-      shiprocketResponse: srErrData || null,
+    console.error('[SHIPROCKET] AWB assignment controller error:', err);
+    return res.status(400).json({
+      success: false,
+      message: err.message || 'Shiprocket AWB assignment failed',
+      error: err.toString(),
     });
-
-    let errorMessage = err.message;
-    if (srErrData) {
-      if (typeof srErrData === 'string') {
-        errorMessage = srErrData;
-      } else if (srErrData.message) {
-        errorMessage = srErrData.message;
-      } else if (srErrData.error) {
-        errorMessage = srErrData.error;
-      } else if (srErrData.errors) {
-        errorMessage = typeof srErrData.errors === 'string' ? srErrData.errors : JSON.stringify(srErrData.errors);
-      } else {
-        errorMessage = JSON.stringify(srErrData);
-      }
-    }
-
-    if (!res.headersSent) {
-      res.status(400);
-    }
-    throw new Error(errorMessage || 'AWB assignment failed');
   }
 });
 

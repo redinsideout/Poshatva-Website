@@ -172,10 +172,10 @@ function normalizeAwbResponse(result) {
 }
 
 /**
- * Assign courier and get AWB.
+ * Assign courier and get AWB (Debugging mode).
  * @param {Number|String} shipmentId - Shiprocket shipment ID
  * @param {Number|String} [courierId] - Optional specific courier ID
- * @returns {Object} normalized AWB response
+ * @returns {Object} Raw Axios response
  */
 async function assignAWB(shipmentId, courierId = null) {
   const parsedShipmentId = Number(shipmentId) || shipmentId;
@@ -185,23 +185,33 @@ async function assignAWB(shipmentId, courierId = null) {
     payload.courier_id = Number(courierId) || courierId;
   }
 
-  console.log('[SHIPROCKET] AWB request payload:', JSON.stringify(payload));
+  console.log('[SHIPROCKET] AWB REQUEST PAYLOAD:', JSON.stringify(payload));
 
-  const result = await apiRequest('POST', '/courier/assign/awb', payload);
+  let result;
+  try {
+    const token = await getToken();
+    result = await axios({
+      method: 'POST',
+      url: `${SHIPROCKET_BASE_URL}/courier/assign/awb`,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      data: payload,
+      timeout: 30000,
+    });
+  } catch (err) {
+    result = err.response || { status: 500, data: { message: err.message } };
+  }
 
-  console.log('[SHIPROCKET] AWB raw response:', JSON.stringify(result));
-
-  const normalized = normalizeAwbResponse(result);
-
-  console.log('[SHIPROCKET] AWB normalized:', JSON.stringify({
-    awbAssignStatus: normalized.awbAssignStatus,
-    awbCode: normalized.awbCode,
-    courierName: normalized.courierName,
-    courierCompanyId: normalized.courierCompanyId,
-    awbAssignError: normalized.awbAssignError,
+  console.log('[SHIPROCKET] AWB RAW AXIOS RESPONSE:', JSON.stringify({
+    status: result?.status,
+    data: result?.data,
   }));
 
-  return normalized;
+  console.log('[SHIPROCKET] AWB RESPONSE DATA:', JSON.stringify(result?.data, null, 2));
+
+  return result;
 }
 
 // ── Generate Shipping Label ──────────────────────────────
