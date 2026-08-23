@@ -148,57 +148,60 @@ async function createOrder(order) {
   return result;
 }
 
-// ── Assign AWB (Auto-assign recommended courier) ────────
+/**
+ * Normalize Shiprocket AWB response regardless of structure.
+ * Handles both:
+ *   - axios response object: result.data.response.data.awb_code
+ *   - direct response.data:  result.response.data.awb_code
+ */
+function normalizeAwbResponse(result) {
+  // Get the Shiprocket JSON body (handle both axios response wrapper and direct)
+  const body = result?.data || result;
 
-// ── Assign AWB ─────────────────────────────────────────
+  // Shiprocket nests AWB data inside response.data
+  const awbData = body?.response?.data || body?.data || {};
+
+  return {
+    raw: body,
+    awbAssignStatus: body?.awb_assign_status ?? null,
+    awbCode: awbData?.awb_code || body?.awb_code || null,
+    courierName: awbData?.courier_name || body?.courier_name || null,
+    courierCompanyId: awbData?.courier_company_id || body?.courier_company_id || null,
+    awbAssignError: awbData?.awb_assign_error || body?.message || awbData?.error || null,
+  };
+}
 
 /**
- * Assign courier (auto-assign or admin selected courier) and get AWB.
- * Diagnostic logging enabled — prints complete Shiprocket response.
+ * Assign courier and get AWB.
+ * @param {Number|String} shipmentId - Shiprocket shipment ID
+ * @param {Number|String} [courierId] - Optional specific courier ID
+ * @returns {Object} normalized AWB response
  */
 async function assignAWB(shipmentId, courierId = null) {
   const parsedShipmentId = Number(shipmentId) || shipmentId;
   const payload = { shipment_id: parsedShipmentId };
-  
+
   if (courierId !== null && courierId !== undefined && courierId !== '') {
     payload.courier_id = Number(courierId) || courierId;
   }
 
-  console.log("[SHIPROCKET AWB REQUEST]", {
-    shipment_id: payload.shipment_id,
-    courier_id: payload.courier_id || null,
-    payload: payload
-  });
+  console.log('[SHIPROCKET] AWB request payload:', JSON.stringify(payload));
 
-  const token = await getToken();
-  const axiosConfig = {
-    method: 'POST',
-    url: `${SHIPROCKET_BASE_URL}/courier/assign/awb`,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    data: payload,
-    timeout: 30000,
-  };
+  const result = await apiRequest('POST', '/courier/assign/awb', payload);
 
-  try {
-    const response = await axios(axiosConfig);
+  console.log('[SHIPROCKET] AWB raw response:', JSON.stringify(result));
 
-    console.log("[SHIPROCKET AWB RAW RESPONSE]", {
-      status: response.status,
-      data: response.data
-    });
+  const normalized = normalizeAwbResponse(result);
 
-    return response.data;
-  } catch (error) {
-    console.error("[SHIPROCKET AWB RAW ERROR]", {
-      status: error.response?.status,
-      data: error.response?.data,
-      headers: error.response?.headers
-    });
-    throw error;
-  }
+  console.log('[SHIPROCKET] AWB normalized:', JSON.stringify({
+    awbAssignStatus: normalized.awbAssignStatus,
+    awbCode: normalized.awbCode,
+    courierName: normalized.courierName,
+    courierCompanyId: normalized.courierCompanyId,
+    awbAssignError: normalized.awbAssignError,
+  }));
+
+  return normalized;
 }
 
 // ── Generate Shipping Label ──────────────────────────────
@@ -348,8 +351,8 @@ async function fulfillOrder(order) {
   let courierName = null;
   try {
     const awbResult = await assignAWB(shipmentId);
-    awbCode = awbResult?.response?.data?.awb_code || null;
-    courierName = awbResult?.response?.data?.courier_name || null;
+    awbCode = awbResult?.awbCode || null;
+    courierName = awbResult?.courierName || null;
   } catch (awbErr) {
     console.error('[SHIPROCKET] AWB assignment failed (can retry manually):', awbErr.response?.data || awbErr.message);
   }
