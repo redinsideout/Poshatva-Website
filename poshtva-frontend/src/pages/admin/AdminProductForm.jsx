@@ -33,14 +33,17 @@ const AdminProductForm = () => {
       productsAPI.getById(id)
         .then((d) => {
           const p = d.product;
-          setForm({
+          console.log('[VARIANT DEBUG] API PRODUCT VARIANTS:', JSON.stringify(p.variants, null, 2));
+          const nextForm = {
             name: p.name, slug: p.slug, description: p.description, richDescription: p.richDescription || '',
             category: p.category?._id || '', price: p.price, discountPrice: p.discountPrice || '',
             stock: p.stock, weight: p.weight || '', unit: p.unit || 'kg',
-            variants: p.variants || [],
+            variants: Array.isArray(p.variants) ? p.variants : [],
             tags: p.tags?.join(', ') || '', isFeatured: p.isFeatured, isActive: p.isActive,
             benefits: p.benefits?.join('\n') || '', howToUse: p.howToUse || '', images: p.images || [],
-          });
+          };
+          console.log('[VARIANT DEBUG] FORM VARIANTS AFTER LOAD:', JSON.stringify(nextForm.variants, null, 2));
+          setForm(nextForm);
         })
         .catch(() => toast.error('Failed to load product'))
         .finally(() => setLoading(false));
@@ -49,14 +52,14 @@ const AdminProductForm = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setForm({ ...form, [name]: type === 'checkbox' ? checked : value });
+    setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const autoSlug = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
   const handleNameChange = (e) => {
     const name = e.target.value;
-    setForm({ ...form, name, slug: !isEdit ? autoSlug(name) : form.slug });
+    setForm((prev) => ({ ...prev, name, slug: !isEdit ? autoSlug(name) : prev.slug }));
   };
 
   // ── Variant Management Handlers ─────────────────────────
@@ -72,21 +75,32 @@ const AdminProductForm = () => {
       sku: '',
       isActive: true,
     };
-    setForm({ ...form, variants: [...form.variants, newVariant] });
+    setForm((prev) => {
+      const nextVariants = [...(prev.variants || []), newVariant];
+      console.log('[VARIANT DEBUG] AFTER ADD:', JSON.stringify(nextVariants, null, 2));
+      return { ...prev, variants: nextVariants };
+    });
   };
 
   const handleVariantChange = (index, field, value) => {
-    const updatedVariants = form.variants.map((v, i) => {
-      if (i === index) {
-        return { ...v, [field]: value };
-      }
-      return v;
+    setForm((prev) => {
+      const updatedVariants = (prev.variants || []).map((v, i) => {
+        if (i === index) {
+          return { ...v, [field]: value };
+        }
+        return v;
+      });
+      console.log('[VARIANT DEBUG] CURRENT FORM VARIANTS:', JSON.stringify(updatedVariants, null, 2));
+      return { ...prev, variants: updatedVariants };
     });
-    setForm({ ...form, variants: updatedVariants });
   };
 
   const handleRemoveVariant = (index) => {
-    setForm({ ...form, variants: form.variants.filter((_, i) => i !== index) });
+    setForm((prev) => {
+      const updatedVariants = (prev.variants || []).filter((_, i) => i !== index);
+      console.log('[VARIANT DEBUG] AFTER REMOVE:', JSON.stringify(updatedVariants, null, 2));
+      return { ...prev, variants: updatedVariants };
+    });
   };
 
   // ── Image Upload ────────────────────────────────────────
@@ -122,7 +136,7 @@ const AdminProductForm = () => {
     }
   };
 
-  const removeImage = (idx) => setForm({ ...form, images: form.images.filter((_, i) => i !== idx) });
+  const removeImage = (idx) => setForm((prev) => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -132,8 +146,9 @@ const AdminProductForm = () => {
     }
 
     setSaving(true);
-    const formattedVariants = form.variants.map((v) => ({
+    const formattedVariants = (form.variants || []).map((v) => ({
       ...v,
+      name: String(v.name || 'Variant').trim(),
       price: Number(v.price) || 0,
       discountPrice: Number(v.discountPrice) || 0,
       stock: Number(v.stock) || 0,
@@ -150,8 +165,7 @@ const AdminProductForm = () => {
       benefits:     typeof form.benefits === 'string' ? form.benefits.split('\n').map((b) => b.trim()).filter(Boolean) : (Array.isArray(form.benefits) ? form.benefits : []),
     };
 
-    console.log('[VARIANT DEBUG] Form variants:', JSON.stringify(form.variants, null, 2));
-    console.log('[VARIANT DEBUG] Update payload:', JSON.stringify(payload, null, 2));
+    console.log('[VARIANT DEBUG] FINAL UPDATE PAYLOAD:', JSON.stringify(payload, null, 2));
 
     try {
       if (isEdit) {

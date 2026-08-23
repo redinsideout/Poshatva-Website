@@ -61,6 +61,7 @@ const ProductDetail = () => {
   );
 
   const { name, description, price, discountPrice, stock, images, rating, numReviews, category, howToUse, variants = [] } = product;
+  console.log('[VARIANT DEBUG] PRODUCT DETAIL VARIANTS:', JSON.stringify(product?.variants, null, 2));
   const activeVariants = variants.filter(v => v.isActive !== false);
   const hasVariants = activeVariants.length > 0;
 
