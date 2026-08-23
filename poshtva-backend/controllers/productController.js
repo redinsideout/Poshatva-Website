@@ -65,7 +65,16 @@ const getProductById = asyncHandler(async (req, res) => {
 
 const mongoose = require('mongoose');
 
-const sanitizeVariants = (variantsArray) => {
+const sanitizeVariants = (rawVariants) => {
+  let variantsArray = rawVariants;
+  if (typeof variantsArray === 'string') {
+    try {
+      variantsArray = JSON.parse(variantsArray);
+    } catch (e) {
+      console.error('[VARIANT DEBUG] Failed to parse variants JSON string:', e);
+      variantsArray = [];
+    }
+  }
   if (!Array.isArray(variantsArray)) return [];
   return variantsArray.map((v) => {
     const clean = {
@@ -94,27 +103,85 @@ const createProduct = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error('Product with this slug already exists');
   }
+
+  console.log('[VARIANT DEBUG] createProduct req.body.variants:', JSON.stringify(variants, null, 2));
+
   const cleanVariants = sanitizeVariants(variants);
   const product = await Product.create({
-    name, slug, description, richDescription, category, price, discountPrice, stock,
+    name,
+    slug,
+    description,
+    richDescription,
+    category,
+    price: Number(price),
+    discountPrice: Number(discountPrice) || 0,
+    stock: Number(stock) || 0,
     variants: cleanVariants,
-    images, weight, unit, tags, isFeatured, benefits, howToUse
+    images,
+    weight,
+    unit,
+    tags,
+    isFeatured,
+    benefits,
+    howToUse,
   });
+
+  console.log('[VARIANT DEBUG] Created product variants:', JSON.stringify(product.variants, null, 2));
   res.status(201).json({ success: true, product });
 });
 
 // @desc  Update product (admin)
 const updateProduct = asyncHandler(async (req, res) => {
-  const product = await Product.findById(req.params.id);
+  const { id } = req.params;
+  const product = await Product.findById(id);
   if (!product) {
     res.status(404);
     throw new Error('Product not found');
   }
-  if (req.body.variants) {
-    req.body.variants = sanitizeVariants(req.body.variants);
-  }
-  const updated = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-  res.json({ success: true, product: updated });
+
+  console.log('[VARIANT DEBUG] req.body.variants:', JSON.stringify(req.body.variants, null, 2));
+  console.log('[VARIANT DEBUG] typeof variants:', typeof req.body.variants);
+  console.log('[VARIANT DEBUG] Array:', Array.isArray(req.body.variants));
+
+  const cleanVariants = sanitizeVariants(req.body.variants);
+
+  const updateData = {
+    name: req.body.name,
+    slug: req.body.slug,
+    description: req.body.description,
+    richDescription: req.body.richDescription,
+    category: req.body.category,
+    price: Number(req.body.price),
+    discountPrice: Number(req.body.discountPrice) || 0,
+    stock: Number(req.body.stock) || 0,
+    weight: req.body.weight,
+    weightInKg: Number(req.body.weightInKg) || 0.5,
+    unit: req.body.unit,
+    tags: req.body.tags,
+    isFeatured: Boolean(req.body.isFeatured),
+    isActive: req.body.isActive !== false,
+    benefits: req.body.benefits,
+    howToUse: req.body.howToUse,
+    images: req.body.images,
+    variants: cleanVariants,
+  };
+
+  const updatedProduct = await Product.findByIdAndUpdate(
+    id,
+    updateData,
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  console.log('[VARIANT DEBUG] Saved variants:', JSON.stringify(updatedProduct?.variants, null, 2));
+
+  // Secondary verification query
+  const verifyProduct = await Product.findById(id).lean();
+  console.log('[VARIANT DEBUG] MongoDB variants after save:', JSON.stringify(verifyProduct?.variants, null, 2));
+
+  res.json({ success: true, product: updatedProduct });
 });
 
 // @desc  Delete product (admin)

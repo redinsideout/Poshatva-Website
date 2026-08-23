@@ -35,7 +35,10 @@ const productSchema = new mongoose.Schema(
     price: { type: Number, required: true, min: 0 },
     discountPrice: { type: Number, default: 0 },
     stock: { type: Number, required: true, default: 0 },
-    variants: [variantSchema],
+    variants: {
+      type: [variantSchema],
+      default: [],
+    },
     images: [{ type: String }],
     weight: { type: String, default: '' },
     weightInKg: { type: Number, default: 0.5 },

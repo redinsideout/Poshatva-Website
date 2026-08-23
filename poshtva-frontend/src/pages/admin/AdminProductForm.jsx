@@ -150,6 +150,9 @@ const AdminProductForm = () => {
       benefits:     typeof form.benefits === 'string' ? form.benefits.split('\n').map((b) => b.trim()).filter(Boolean) : (Array.isArray(form.benefits) ? form.benefits : []),
     };
 
+    console.log('[VARIANT DEBUG] Form variants:', JSON.stringify(form.variants, null, 2));
+    console.log('[VARIANT DEBUG] Update payload:', JSON.stringify(payload, null, 2));
+
     try {
       if (isEdit) {
         await productsAPI.update(id, payload);

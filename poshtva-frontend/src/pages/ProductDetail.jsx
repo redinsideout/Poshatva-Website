@@ -66,7 +66,7 @@ const ProductDetail = () => {
 
   // Resolve current active variant or fallback to product root pricing
   const currentVariant = hasVariants
-    ? (activeVariants.find(v => v._id === selectedVariantId || v._id?.toString() === selectedVariantId) || activeVariants[0])
+    ? (activeVariants.find(v => String(v._id) === String(selectedVariantId)) || activeVariants[0])
     : null;
 
   const currentPrice = currentVariant
@@ -213,14 +213,14 @@ const ProductDetail = () => {
                 </div>
                 <div className="flex flex-wrap gap-3">
                   {activeVariants.map((v) => {
-                    const isSelected = v._id === currentVariant?._id;
+                    const isSelected = String(v._id) === String(currentVariant?._id);
                     const isOutOfStock = v.stock <= 0;
                     const vPrice = v.discountPrice > 0 ? v.discountPrice : v.price;
                     return (
                       <button
                         key={v._id}
                         type="button"
-                        onClick={() => setSelectedVariantId(v._id)}
+                        onClick={() => setSelectedVariantId(String(v._id))}
                         className={`px-6 py-3.5 rounded-2xl border-2 transition-all text-sm font-bold flex flex-col items-center gap-0.5 relative ${
                           isSelected
                             ? 'border-forest-600 bg-forest-50 text-forest-900 shadow-md transform -translate-y-1'
