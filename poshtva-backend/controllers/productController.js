@@ -1,6 +1,18 @@
 const asyncHandler = require('express-async-handler');
 const Product = require('../models/Product');
 
+const ensureVariantsArray = (productObj) => {
+  if (!productObj) return productObj;
+  if (Array.isArray(productObj)) {
+    return productObj.map((p) => ensureVariantsArray(p));
+  }
+  const p = typeof productObj.toObject === 'function' ? productObj.toObject() : { ...productObj };
+  if (!Array.isArray(p.variants)) {
+    p.variants = [];
+  }
+  return p;
+};
+
 // @desc  Get all products with filters
 const getProducts = asyncHandler(async (req, res) => {
   const { category, minPrice, maxPrice, search, featured, page = 1, limit = 12, sort } = req.query;
@@ -39,7 +51,7 @@ const getProducts = asyncHandler(async (req, res) => {
     total,
     page: Number(page),
     pages: Math.ceil(total / Number(limit)),
-    products,
+    products: ensureVariantsArray(products),
   });
 });
 
@@ -50,7 +62,7 @@ const getProductBySlug = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Product not found');
   }
-  res.json({ success: true, product });
+  res.json({ success: true, product: ensureVariantsArray(product) });
 });
 
 // @desc  Get product by ID (admin)
@@ -60,7 +72,7 @@ const getProductById = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Product not found');
   }
-  res.json({ success: true, product });
+  res.json({ success: true, product: ensureVariantsArray(product) });
 });
 
 const mongoose = require('mongoose');
@@ -163,8 +175,11 @@ const updateProduct = asyncHandler(async (req, res) => {
     benefits: req.body.benefits,
     howToUse: req.body.howToUse,
     images: req.body.images,
-    variants: cleanVariants,
   };
+
+  if (Object.prototype.hasOwnProperty.call(req.body, 'variants')) {
+    updateData.variants = cleanVariants;
+  }
 
   const updatedProduct = await Product.findByIdAndUpdate(
     id,
